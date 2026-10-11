@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from "react";
 import {
   Navigation, ShieldAlert, AlertTriangle, CheckCircle2,
-  Clock, MapPin, ArrowRight, RefreshCw, Compass
+  Clock, MapPin, ArrowRight, RefreshCw, Compass,
+  Layers, ChevronRight, ShieldCheck, Info
 } from "lucide-react";
 import { fetchSettlements, fetchIsolationAnalysis, analyzeRoute, fetchMapLayers, getPrimaryEventId } from "@/lib/api";
-import FloodMap from "@/components/FloodMap";
+import FloodGuardMap from "@/components/maps/FloodGuardMap";
 import Link from "next/link";
 
 export default function RescuePlanningPage() {
@@ -15,10 +16,12 @@ export default function RescuePlanningPage() {
   const [selectedBaseId, setSelectedBaseId] = useState<string>("");
   const [selectedSettlementId, setSelectedSettlementId] = useState<string>("");
   const [algorithm, setAlgorithm] = useState<string>("dijkstra");
+  const [avoidanceMode, setAvoidanceMode] = useState<"strict_dry" | "allow_shallow">("allow_shallow");
 
   const [layersData, setLayersData] = useState<any>(null);
   const [routeResult, setRouteResult] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +55,7 @@ export default function RescuePlanningPage() {
   const handleComputeRoute = async () => {
     if (!selectedBaseId || !selectedSettlementId) return;
     setIsCalculating(true);
+    setErrorMessage(null);
     try {
       const eventId = await getPrimaryEventId();
       const res = await analyzeRoute({
@@ -61,88 +65,95 @@ export default function RescuePlanningPage() {
         algorithm: algorithm
       });
       setRouteResult(res);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setErrorMessage("No mapped route is available under the selected flood-exposure assumptions. All approach road corridors are submerged.");
+      setRouteResult(null);
     } finally {
       setIsCalculating(false);
     }
   };
 
+  const selectedBase = bases.find(b => b.id === selectedBaseId);
+  const selectedSettlement = settlements.find(s => s.id === selectedSettlementId);
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="surface-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-[#00D4FF] uppercase tracking-wider font-bold">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#2563EB]">
             <Navigation className="w-4 h-4" />
             <span>Tactical Evacuation & Access Logistics</span>
           </div>
-          <h1 className="text-2xl font-black text-white mt-1">Rescue Route Assessment & Path Planning</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Dijkstra & A* shortest-path algorithms evaluating road corridors against satellite flood intersections.
+          <h1 className="text-xl font-bold text-white mt-1">Rescue Route Assessment & Path Planning</h1>
+          <p className="text-xs text-[#94A3B8] mt-1">
+            Dijkstra & A* shortest-path algorithms evaluating overland corridors against satellite flood extents.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             href="/command"
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition"
+            className="btn-secondary text-xs flex items-center gap-1.5"
           >
-            Command Dashboard
+            <span>Command Center</span>
           </Link>
         </div>
       </div>
 
-      {/* Main Grid: Selector Controls on Left, Route Result & Visualizer on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Controls Column */}
-        <div className="flex flex-col gap-5">
-          <div className="glass-panel p-5 rounded-2xl space-y-4">
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              1. Route Parameters
+      {/* Main Grid: Parameters on Left, Map & Route Diagnostic on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-[560px]">
+        {/* Left 4 Cols: Routing Parameters Panel */}
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          <div className="surface-card p-4 space-y-4 text-xs">
+            <h3 className="font-semibold text-slate-200 uppercase tracking-wider text-[11px]">
+              1. Routing Configuration
             </h3>
 
-            {/* Select Rescue Staging Base */}
-            <div className="space-y-1.5 text-xs">
-              <label className="text-slate-400 font-semibold">Origin Rescue Base:</label>
+            {/* Origin Staging Base */}
+            <div className="space-y-1">
+              <label className="text-slate-400 font-medium">Origin Rescue Base:</label>
               <select
                 value={selectedBaseId}
                 onChange={(e) => setSelectedBaseId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full bg-[#0B1220] border border-[#334155] rounded-lg p-2 text-slate-200 text-xs focus:outline-none focus:border-[#2563EB]"
               >
                 {bases.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.personnel_count} personnel, {b.boats_count} boats)
+                    {b.name} ({b.personnel_count} staff, {b.boats_count} boats)
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Select Destination Settlement */}
-            <div className="space-y-1.5 text-xs">
-              <label className="text-slate-400 font-semibold">Destination Settlement:</label>
+            {/* Destination Settlement */}
+            <div className="space-y-1">
+              <label className="text-slate-400 font-medium">Target Settlement:</label>
               <select
                 value={selectedSettlementId}
                 onChange={(e) => setSelectedSettlementId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full bg-[#0B1220] border border-[#334155] rounded-lg p-2 text-slate-200 text-xs focus:outline-none focus:border-[#2563EB]"
               >
                 {settlements.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} (Pop: {Number(s.estimated_population).toLocaleString()} | {s.connectivity_status?.replace('_', ' ')})
+                    {s.name} (Pop: {Number(s.estimated_population).toLocaleString()} · {s.connectivity_status?.replace(/_/g, " ")})
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Select Routing Algorithm */}
-            <div className="space-y-1.5 text-xs">
-              <label className="text-slate-400 font-semibold">Optimization Algorithm:</label>
+            {/* Algorithm Selector */}
+            <div className="space-y-1.5">
+              <label className="text-slate-400 font-medium">Algorithm:</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setAlgorithm("dijkstra")}
-                  className={`p-2.5 rounded-lg border text-center transition ${
-                    algorithm === "dijkstra" ? "bg-[#00D4FF]/20 border-[#00D4FF] text-[#00D4FF] font-bold" : "bg-slate-900/60 border-slate-800 text-slate-400"
+                  className={`p-2 rounded-lg border text-center transition cursor-pointer ${
+                    algorithm === "dijkstra"
+                      ? "bg-[#2563EB] text-white border-[#2563EB] font-semibold"
+                      : "bg-[#0B1220] border-[#334155] text-slate-400 hover:text-white"
                   }`}
                 >
                   Dijkstra Search
@@ -150,112 +161,127 @@ export default function RescuePlanningPage() {
                 <button
                   type="button"
                   onClick={() => setAlgorithm("a_star")}
-                  className={`p-2.5 rounded-lg border text-center transition ${
-                    algorithm === "a_star" ? "bg-[#00D4FF]/20 border-[#00D4FF] text-[#00D4FF] font-bold" : "bg-slate-900/60 border-slate-800 text-slate-400"
+                  className={`p-2 rounded-lg border text-center transition cursor-pointer ${
+                    algorithm === "a_star"
+                      ? "bg-[#2563EB] text-white border-[#2563EB] font-semibold"
+                      : "bg-[#0B1220] border-[#334155] text-slate-400 hover:text-white"
                   }`}
                 >
-                  A* Heuristic Search
+                  A* Heuristic
                 </button>
               </div>
             </div>
 
-            {/* Execute Button */}
+            {/* Execute Calculation */}
             <button
               onClick={handleComputeRoute}
               disabled={isCalculating}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-blue-600 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-50 transition cursor-pointer shadow-lg shadow-cyan-500/20"
+              className="btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-2 disabled:opacity-40"
             >
-              {isCalculating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
+              {isCalculating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
               <span>Compute Candidate Route</span>
             </button>
           </div>
 
-          {/* Critical Operational Safety Box */}
-          <div className="glass-panel p-5 rounded-2xl border-l-4 border-amber-500 text-xs text-slate-300 space-y-2">
-            <div className="flex items-center gap-2 text-amber-400 font-bold">
+          {/* Operational Safety Notice */}
+          <div className="surface-card p-4 border-l-2 border-l-amber-500 text-xs text-slate-300 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-[11px]">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              <span>SAFETY REQUIREMENT</span>
+              <span>MANDATORY SAFETY REQUIREMENT</span>
             </div>
-            <p className="leading-relaxed">
-              Never label a route as guaranteed safe. Satellite imagery indicates surface water extent at the moment of capture, but cannot certify that road foundations, culverts, or bridges remain structurally sound.
+            <p className="leading-relaxed text-slate-400 text-[11px]">
+              Never label a route as guaranteed safe. Satellite imagery captures surface water at pass time, but cannot certify that subgrade gravel, culverts, or bridge abutments remain structurally intact. Ground or UAV reconnaissance is required before dispatch.
             </p>
           </div>
         </div>
 
-        {/* Route Assessment Results & Map Column */}
-        <div className="lg:col-span-2 flex flex-col gap-5">
-          {/* Interactive Route Map */}
-          <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3 min-h-[380px]">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#00D4FF]" />
-                Candidate Route Geospatial Overlay
+        {/* Right 8 Cols: Map & Route Assessment Results */}
+        <div className="lg:col-span-8 flex flex-col gap-4">
+          {/* Interactive Map */}
+          <div className="surface-card p-3 flex flex-col gap-2 min-h-[380px]">
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="font-semibold text-white flex items-center gap-2">
+                <Compass className="w-4 h-4 text-[#2563EB]" />
+                Candidate Route Geospatial Visualizer
               </span>
-              <span className="text-[11px] text-slate-400">
-                {routeResult ? `Distance: ${routeResult.distance_km} km` : "Select base & destination to compute"}
+              <span className="text-[11px] text-[#94A3B8]">
+                {routeResult ? `Calculated Distance: ${routeResult.distance_km} km` : "Select base and target to compute"}
               </span>
             </div>
 
-            <div className="w-full h-[320px] rounded-xl overflow-hidden border border-slate-800">
-              <FloodMap
+            <div className="w-full h-[340px] rounded-lg overflow-hidden">
+              <FloodGuardMap
                 layersData={layersData}
                 candidateRoute={routeResult}
+                selectedSettlement={selectedSettlement}
                 floodOpacity={0.65}
               />
             </div>
           </div>
 
-          {/* Route Stats & Warnings */}
+          {/* Error Message if disconnected */}
+          {errorMessage && (
+            <div className="surface-card p-4 border-l-2 border-l-red-500 text-xs text-red-300">
+              <div className="font-semibold mb-1 flex items-center gap-1.5 text-red-400">
+                <AlertTriangle className="w-4 h-4" />
+                <span>No Mapped Route Available</span>
+              </div>
+              <p className="leading-relaxed text-slate-400">{errorMessage}</p>
+            </div>
+          )}
+
+          {/* Route Assessment Summary */}
           {routeResult && (
-            <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+            <div className="surface-card p-4 space-y-3 text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#334155] pb-2.5">
                 <div>
-                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
                     routeResult.route_classification === "unexposed_candidate_route"
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : routeResult.route_classification === "flood_exposed_candidate_route"
-                      ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                      : "bg-slate-800 text-slate-400 border border-slate-700"
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : "bg-red-500/15 text-red-400"
                   }`}>
-                    {routeResult.route_classification.replace(/_/g, " ")}
+                    {routeResult.route_classification?.replace(/_/g, " ")}
                   </span>
-                  <h3 className="text-xl font-black text-white mt-1">
-                    Route: {routeResult.base_name} → {routeResult.settlement_name}
+                  <h3 className="text-sm font-bold text-white mt-1">
+                    Transit: {routeResult.base_name} → {routeResult.settlement_name}
                   </h3>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-xs text-slate-400 font-mono">Algorithm: {routeResult.algorithm_used}</span>
+                <div className="text-right font-mono text-[11px] text-[#94A3B8]">
+                  Algorithm: {routeResult.algorithm_used}
                 </div>
               </div>
 
-              {/* Stats Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Transit Distance</div>
-                  <div className="text-2xl font-black text-[#00D4FF] mt-1">{routeResult.distance_km} km</div>
+              {/* Transit Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                <div className="p-2.5 bg-[#0B1220] rounded border border-[#334155]">
+                  <span className="text-[#94A3B8] text-[10px] block">Transit Distance</span>
+                  <span className="text-lg font-bold text-white mt-0.5 block font-mono">
+                    {routeResult.distance_km} km
+                  </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Estimated Transit Time</div>
-                  <div className="text-2xl font-black text-amber-400 mt-1">{routeResult.estimated_time_minutes} min</div>
-                  <div className="text-[10px] text-slate-500">Convoy pace</div>
+                <div className="p-2.5 bg-[#0B1220] rounded border border-[#334155]">
+                  <span className="text-[#94A3B8] text-[10px] block">Estimated Duration</span>
+                  <span className="text-lg font-bold text-amber-400 mt-0.5 block font-mono">
+                    ~{Math.round(routeResult.estimated_time_minutes)} min
+                  </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 col-span-2 sm:col-span-1">
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Verification Status</div>
-                  <div className="text-xs font-bold text-slate-200 mt-2">Preliminary Aid (Unverified)</div>
+                <div className="p-2.5 bg-[#0B1220] rounded border border-[#334155]">
+                  <span className="text-[#94A3B8] text-[10px] block">Verification Status</span>
+                  <span className="text-xs font-semibold text-slate-300 mt-1 block">
+                    Computational Planning Aid
+                  </span>
                 </div>
               </div>
 
-              {/* Exposure Summary */}
-              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-300 leading-relaxed">
-                <strong>Flood Exposure Assessment:</strong> {routeResult.flood_exposure_summary}
-              </div>
-
-              {/* Bold Disclaimer Box */}
-              <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-900/40 text-[11px] text-red-200 leading-relaxed">
-                {routeResult.safety_disclaimer}
+              {/* Exposure Detail Note */}
+              <div className="p-2.5 bg-[#0B1220] rounded border border-[#334155] text-[11px] text-slate-300 space-y-1">
+                <span className="font-semibold text-white block">Exposure Assessment:</span>
+                <p className="leading-relaxed text-slate-400 text-[10px]">
+                  {routeResult.flood_exposure_summary || "Route intersects SAR flood extent. Boat or amphibious transport required for submerged segments."}
+                </p>
               </div>
             </div>
           )}

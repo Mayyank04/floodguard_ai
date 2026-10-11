@@ -1,148 +1,108 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050B14;
-  --surface-primary: #0A1628;
-  --surface-secondary: #0E1E36;
-  --surface-tertiary: #142847;
-  --foreground: #F8FAFC;
-  --text-dim: #64748B;
-  --text-muted: #94A3B8;
-  --accent-cyan: #00E5FF;
-  --accent-blue: #2563EB;
-  --accent-emerald: #10B981;
-  --alert-red: #FF3B30;
-  --alert-orange: #F97316;
-  --alert-yellow: #FACC15;
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-highlight: rgba(0, 229, 255, 0.25);
+  --background: #0B1220;
+  --sidebar-bg: #111827;
+  --surface: #172033;
+  --surface-elevated: #1E293B;
+  --border: #334155;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --secondary: #06B6D4;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
 }
 
 body {
   background-color: var(--background);
-  color: var(--foreground);
+  color: var(--text-primary);
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
   margin: 0;
   padding: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.011em;
 }
 
 code, pre, .font-mono {
   font-family: var(--font-jetbrains-mono), monospace;
 }
 
-/* Custom Tactical Scrollbars */
+/* Restrained Enterprise Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #050B14;
+  background: #0B1220;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
-  border-radius: 4px;
+  background: #334155;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00E5FF;
+  background: #475569;
 }
 
-/* Glassmorphism Tactical Panels */
-.glass-panel {
-  background: rgba(10, 22, 40, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Standard Clean Surface Cards */
+.surface-card {
+  background-color: #172033;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease;
 }
 
-.glass-panel-card {
-  background: linear-gradient(135deg, rgba(14, 30, 54, 0.8) 0%, rgba(10, 22, 40, 0.9) 100%);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+.surface-card:hover {
+  border-color: #475569;
 }
 
-.glass-panel-card:hover {
-  border-color: rgba(0, 229, 255, 0.35);
-  box-shadow: 0 10px 30px -5px rgba(0, 229, 255, 0.12);
-  transform: translateY(-2px);
+.surface-card-elevated {
+  background-color: #1E293B;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
-/* Tactical Glows & Indicators */
-.glow-cyan {
-  box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+/* Button utility classes */
+.btn-primary {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: #1D4ED8;
 }
 
-.glow-red {
-  box-shadow: 0 0 25px rgba(255, 59, 48, 0.35);
+.btn-secondary {
+  background-color: #1E293B;
+  color: #F8FAFC;
+  border: 1px solid #334155;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
 }
-
-.glow-amber {
-  box-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
-}
-
-/* Radar Sweep Animation */
-@keyframes radarSweep {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.radar-sweep-effect {
-  position: relative;
-  overflow: hidden;
-}
-
-.radar-sweep-effect::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(0, 229, 255, 0.18) 360deg);
-  animation: radarSweep 6s linear infinite;
-  pointer-events: none;
-}
-
-/* Pulse Beacon */
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.15);
-  }
-}
-
-.beacon-pulse {
-  animation: pulseGlow 2.5s ease-in-out infinite;
-}
-
-/* Shimmer Loading State */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.skeleton-shimmer {
-  background: linear-gradient(90deg, rgba(14, 30, 54, 0.6) 25%, rgba(0, 229, 255, 0.1) 50%, rgba(14, 30, 54, 0.6) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+.btn-secondary:hover {
+  background-color: #334155;
+  color: #FFFFFF;
 }
 
 /* MapLibre full container */
