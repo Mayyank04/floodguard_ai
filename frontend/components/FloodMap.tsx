@@ -3,7 +3,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Layers, Eye, EyeOff, ZoomIn, ZoomOut, Compass, Info, MapPin } from "lucide-react";
+import {
+  Layers, Eye, EyeOff, ZoomIn, ZoomOut, Compass, Info,
+  MapPin, Maximize2, Minimize2, Navigation, Shield, Satellite,
+  Activity, Crosshair, ChevronDown, ChevronUp
+} from "lucide-react";
 
 interface FloodMapProps {
   layersData?: any;
@@ -25,7 +29,12 @@ export default function FloodMap({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [basemap, setBasemap] = useState<"satellite" | "dark">("dark");
+  const [basemap, setBasemap] = useState<"dark" | "satellite">("dark");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(true);
+  const [mouseCoords, setMouseCoords] = useState<{ lat: string; lng: string }>({ lat: "26.3211", lng: "91.0065" });
+  const [zoomLevel, setZoomLevel] = useState("10.6");
+
   const [activeLayers, setActiveLayers] = useState({
     flood: true,
     roads: true,
@@ -36,37 +45,59 @@ export default function FloodMap({
 
   const [hoveredFeature, setHoveredFeature] = useState<any>(null);
 
+  // Basemap style configurations
+  const darkStyle = {
+    version: 8 as const,
+    sources: {
+      "carto-dark": {
+        type: "raster" as const,
+        tiles: [
+          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png"
+        ],
+        tileSize: 256
+      }
+    },
+    layers: [
+      {
+        id: "carto-dark-layer",
+        type: "raster" as const,
+        source: "carto-dark",
+        minzoom: 0,
+        maxzoom: 20
+      }
+    ]
+  };
+
+  const satelliteStyle = {
+    version: 8 as const,
+    sources: {
+      "esri-satellite": {
+        type: "raster" as const,
+        tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        ],
+        tileSize: 256
+      }
+    },
+    layers: [
+      {
+        id: "esri-sat-layer",
+        type: "raster" as const,
+        source: "esri-satellite",
+        minzoom: 0,
+        maxzoom: 20
+      }
+    ]
+  };
+
   // Initialize Map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    // OpenFreeMap / CARTO Dark tiles style
-    const darkStyle = {
-      version: 8 as const,
-      sources: {
-        "carto-dark": {
-          type: "raster" as const,
-          tiles: [
-            "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-            "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png"
-          ],
-          tileSize: 256
-        }
-      },
-      layers: [
-        {
-          id: "carto-dark-layer",
-          type: "raster" as const,
-          source: "carto-dark",
-          minzoom: 0,
-          maxzoom: 20
-        }
-      ]
-    };
-
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: darkStyle,
+      style: basemap === "dark" ? darkStyle : satelliteStyle,
       center: [91.01, 26.29], // Barpeta, Assam
       zoom: 10.6,
       attributionControl: false
@@ -76,11 +107,35 @@ export default function FloodMap({
       setMapLoaded(true);
     });
 
+    map.current.on("mousemove", (e) => {
+      setMouseCoords({
+        lat: e.lngLat.lat.toFixed(4),
+        lng: e.lngLat.lng.toFixed(4)
+      });
+    });
+
+    map.current.on("zoom", () => {
+      if (map.current) {
+        setZoomLevel(map.current.getZoom().toFixed(1));
+      }
+    });
+
     return () => {
       map.current?.remove();
       map.current = null;
     };
   }, []);
+
+  // Handle Basemap Switch
+  const switchBasemap = (newBasemap: "dark" | "satellite") => {
+    if (newBasemap === basemap || !map.current) return;
+    setBasemap(newBasemap);
+    map.current.setStyle(newBasemap === "dark" ? darkStyle : satelliteStyle);
+    map.current.once("style.load", () => {
+      // Re-trigger layers addition
+      setMapLoaded(true);
+    });
+  };
 
   // Update Data Sources and Layers
   useEffect(() => {
@@ -102,7 +157,7 @@ export default function FloodMap({
           type: "fill",
           source: "flood-source",
           paint: {
-            "fill-color": "#00D4FF",
+            "fill-color": "#00E5FF",
             "fill-opacity": floodOpacity
           }
         });
@@ -114,7 +169,7 @@ export default function FloodMap({
           paint: {
             "line-color": "#38BDF8",
             "line-width": 2,
-            "line-opacity": 0.9
+            "line-opacity": 0.95
           }
         });
       }
@@ -138,8 +193,8 @@ export default function FloodMap({
             "line-color": [
               "case",
               ["get", "flood_intersection"],
-              "#EF4444",
-              "#22C55E"
+              "#FF3B30",
+              "#10B981"
             ],
             "line-width": [
               "case",
@@ -147,7 +202,7 @@ export default function FloodMap({
               4,
               2.5
             ],
-            "line-opacity": 0.85
+            "line-opacity": 0.9
           }
         });
       }
@@ -164,14 +219,26 @@ export default function FloodMap({
         });
 
         m.addLayer({
+          id: "candidate-route-glow",
+          type: "line",
+          source: "route-source",
+          paint: {
+            "line-color": "#FACC15",
+            "line-width": 10,
+            "line-opacity": 0.35,
+            "line-blur": 3
+          }
+        });
+
+        m.addLayer({
           id: "candidate-route-line",
           type: "line",
           source: "route-source",
           paint: {
             "line-color": "#FACC15",
-            "line-width": 5,
+            "line-width": 4,
             "line-dasharray": [2, 1],
-            "line-opacity": 0.95
+            "line-opacity": 1.0
           }
         });
       }
@@ -224,7 +291,7 @@ export default function FloodMap({
           source: "bases-source",
           paint: {
             "circle-radius": 9,
-            "circle-color": "#3B82F6",
+            "circle-color": "#2563EB",
             "circle-stroke-width": 3,
             "circle-stroke-color": "#60A5FA"
           }
@@ -251,9 +318,9 @@ export default function FloodMap({
             "circle-color": [
               "match",
               ["get", "connectivity_status"],
-              "critical_isolated", "rgba(239, 68, 68, 0.4)",
+              "critical_isolated", "rgba(255, 59, 48, 0.4)",
               "potentially_isolated", "rgba(249, 115, 22, 0.4)",
-              "rgba(34, 197, 94, 0.2)"
+              "rgba(16, 185, 129, 0.2)"
             ]
           }
         });
@@ -267,9 +334,9 @@ export default function FloodMap({
             "circle-color": [
               "match",
               ["get", "connectivity_status"],
-              "critical_isolated", "#EF4444",
+              "critical_isolated", "#FF3B30",
               "potentially_isolated", "#F97316",
-              "#22C55E"
+              "#10B981"
             ],
             "circle-stroke-width": 2,
             "circle-stroke-color": "#FFFFFF"
@@ -301,7 +368,7 @@ export default function FloodMap({
         });
       }
     }
-  }, [layersData, mapLoaded, candidateRoute, onSelectSettlement, floodOpacity]);
+  }, [layersData, mapLoaded, candidateRoute, onSelectSettlement, floodOpacity, basemap]);
 
   // Adjust flood fill opacity dynamically
   useEffect(() => {
@@ -346,154 +413,250 @@ export default function FloodMap({
     }
   };
 
+  const toggleFullscreen = () => {
+    if (!mapContainer.current) return;
+    if (!isFullscreen) {
+      if (mapContainer.current.requestFullscreen) {
+        mapContainer.current.requestFullscreen();
+      }
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+      setIsFullscreen(false);
+    }
+  };
+
   return (
-    <div className="relative w-full h-full min-h-[550px] rounded-xl overflow-hidden border border-slate-800 bg-[#07111F]">
+    <div className={`relative w-full h-full min-h-[550px] rounded-2xl overflow-hidden border border-slate-800/80 bg-[#050B14] shadow-2xl ${isFullscreen ? "fixed inset-0 z-50 rounded-none border-none" : ""}`}>
       <div ref={mapContainer} className="w-full h-full" />
 
-      {/* Floating Map Controls Top-Left */}
-      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-        <div className="glass-panel p-2 rounded-lg flex flex-col gap-1 shadow-2xl">
+      {/* Floating HUD Telemetry Bar Top-Left */}
+      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2 pointer-events-auto">
+        {/* Navigation Controls */}
+        <div className="glass-panel p-1.5 rounded-xl flex flex-col gap-1 shadow-2xl border border-slate-700/60">
           <button
             onClick={() => map.current?.zoomIn()}
-            className="p-2 hover:bg-slate-700/50 rounded text-slate-200 transition"
+            className="p-2 hover:bg-slate-700/60 rounded-lg text-slate-200 hover:text-[#00E5FF] transition cursor-pointer"
             title="Zoom In"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => map.current?.zoomOut()}
-            className="p-2 hover:bg-slate-700/50 rounded text-slate-200 transition"
+            className="p-2 hover:bg-slate-700/60 rounded-lg text-slate-200 hover:text-[#00E5FF] transition cursor-pointer"
             title="Zoom Out"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={() => map.current?.resetNorthPitch()}
-            className="p-2 hover:bg-slate-700/50 rounded text-slate-200 transition"
+            className="p-2 hover:bg-slate-700/60 rounded-lg text-slate-200 hover:text-[#00E5FF] transition cursor-pointer"
             title="Reset Orientation"
           >
             <Compass className="w-4 h-4" />
+          </button>
+          <div className="h-px bg-slate-800 my-0.5" />
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 hover:bg-slate-700/60 rounded-lg text-slate-200 hover:text-[#00E5FF] transition cursor-pointer"
+            title="Toggle Fullscreen"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Live Coordinates Readout */}
+        <div className="glass-panel px-3 py-1.5 rounded-lg text-[10px] font-mono text-slate-300 flex items-center gap-2 border border-slate-800/80 shadow-lg">
+          <Crosshair className="w-3 h-3 text-[#00E5FF] animate-pulse" />
+          <span>{mouseCoords.lat}°N, {mouseCoords.lng}°E</span>
+          <span className="text-slate-500">|</span>
+          <span className="text-[#00E5FF]">z{zoomLevel}</span>
+        </div>
+      </div>
+
+      {/* Basemap Switcher Top-Center */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+        <div className="glass-panel p-1 rounded-xl flex items-center gap-1 shadow-2xl border border-slate-700/60 text-xs font-semibold">
+          <button
+            onClick={() => switchBasemap("dark")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+              basemap === "dark"
+                ? "bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/40 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Dark Carto</span>
+          </button>
+          <button
+            onClick={() => switchBasemap("satellite")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+              basemap === "satellite"
+                ? "bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/40 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Satellite className="w-3.5 h-3.5" />
+            <span>Satellite Imagery</span>
           </button>
         </div>
       </div>
 
       {/* Layer Toggles Panel Top-Right */}
-      <div className="absolute top-4 right-4 z-20 glass-panel p-3 rounded-xl shadow-2xl max-w-xs">
-        <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-slate-700/60">
-          <Layers className="w-4 h-4 text-[#00D4FF]" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">Map Layers</span>
-        </div>
-        <div className="flex flex-col gap-1.5 text-xs">
-          <button
-            onClick={() => toggleLayer("flood")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded transition ${
-              activeLayers.flood ? "bg-[#00D4FF]/20 text-[#00D4FF] border border-[#00D4FF]/30" : "text-slate-400 hover:bg-slate-800"
-            }`}
+      <div className="absolute top-4 right-4 z-20 pointer-events-auto">
+        <div className="glass-panel rounded-xl shadow-2xl border border-slate-700/60 w-64 overflow-hidden">
+          <div
+            onClick={() => setLayersOpen(!layersOpen)}
+            className="flex items-center justify-between px-3 py-2.5 bg-slate-900/60 border-b border-slate-800 cursor-pointer select-none hover:bg-slate-800/50 transition"
           >
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00D4FF]" />
-              SAR Floodwater Mask
-            </span>
-            {activeLayers.flood ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-
-          <button
-            onClick={() => toggleLayer("roads")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded transition ${
-              activeLayers.roads ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-slate-400 hover:bg-slate-800"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-1 rounded bg-emerald-400" />
-              Road Network (OSM)
-            </span>
-            {activeLayers.roads ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-
-          <button
-            onClick={() => toggleLayer("settlements")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded transition ${
-              activeLayers.settlements ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "text-slate-400 hover:bg-slate-800"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-              Settlements & Isolation
-            </span>
-            {activeLayers.settlements ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-
-          <button
-            onClick={() => toggleLayer("infrastructure")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded transition ${
-              activeLayers.infrastructure ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" : "text-slate-400 hover:bg-slate-800"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-              Hospitals & Shelters
-            </span>
-            {activeLayers.infrastructure ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-
-          <button
-            onClick={() => toggleLayer("bases")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded transition ${
-              activeLayers.bases ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : "text-slate-400 hover:bg-slate-800"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              NDRF / SDRF Bases
-            </span>
-            {activeLayers.bases ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Map Legend Bottom-Left */}
-      <div className="absolute bottom-4 left-4 z-20 glass-panel px-3 py-2 rounded-lg text-[11px] text-slate-300 flex items-center gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-          <span>Critical Cut-off</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#F97316]" />
-          <span>Potentially Isolated</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
-          <span>Road Connected</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-1.5 rounded bg-[#EF4444]" />
-          <span>Severed Road</span>
-        </div>
-      </div>
-
-      {/* Hover Tooltip */}
-      {hoveredFeature && hoveredFeature.props && (
-        <div
-          className="absolute z-30 pointer-events-none glass-panel p-2.5 rounded-lg shadow-xl text-xs"
-          style={{ left: hoveredFeature.x + 12, top: hoveredFeature.y - 12 }}
-        >
-          <div className="font-bold text-slate-100">{hoveredFeature.props.name}</div>
-          <div className="text-slate-300 mt-0.5">
-            Population: <span className="text-[#00D4FF] font-semibold">{Number(hoveredFeature.props.population || 0).toLocaleString()}</span>
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#00E5FF]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-100">GIS Overlays</span>
+            </div>
+            {layersOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
           </div>
-          <div className="text-slate-400 mt-0.5 capitalize">
-            Status: <span className={
-              hoveredFeature.props.connectivity_status === "critical_isolated" ? "text-red-400 font-bold" :
-              hoveredFeature.props.connectivity_status === "potentially_isolated" ? "text-orange-400 font-bold" : "text-emerald-400"
-            }>{hoveredFeature.props.connectivity_status?.replace('_', ' ')}</span>
-          </div>
-          {hoveredFeature.props.priority_score && (
-            <div className="text-slate-400 mt-0.5">
-              Priority: <span className="text-yellow-400 font-bold">{hoveredFeature.props.priority_score}/100</span> (Rank #{hoveredFeature.props.priority_rank})
+
+          {layersOpen && (
+            <div className="p-2.5 flex flex-col gap-1.5 text-xs">
+              <button
+                onClick={() => toggleLayer("flood")}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                  activeLayers.flood ? "bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/30 font-medium" : "text-slate-400 hover:bg-slate-800/50"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#00E5FF] shadow-[0_0_6px_#00E5FF]" />
+                  <span>SAR Flood Extent</span>
+                </span>
+                {activeLayers.flood ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={() => toggleLayer("roads")}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                  activeLayers.roads ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium" : "text-slate-400 hover:bg-slate-800/50"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-3 h-1 rounded bg-emerald-400" />
+                  <span>Road Network (OSM)</span>
+                </span>
+                {activeLayers.roads ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={() => toggleLayer("settlements")}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                  activeLayers.settlements ? "bg-red-500/20 text-red-300 border border-red-500/30 font-medium" : "text-slate-400 hover:bg-slate-800/50"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_#FF3B30]" />
+                  <span>Settlements & Isolation</span>
+                </span>
+                {activeLayers.settlements ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={() => toggleLayer("infrastructure")}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                  activeLayers.infrastructure ? "bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium" : "text-slate-400 hover:bg-slate-800/50"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                  <span>Hospitals & Shelters</span>
+                </span>
+                {activeLayers.infrastructure ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={() => toggleLayer("bases")}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                  activeLayers.bases ? "bg-blue-500/20 text-blue-300 border border-blue-500/30 font-medium" : "text-slate-400 hover:bg-slate-800/50"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span>NDRF / SDRF Staging</span>
+                </span>
+                {activeLayers.bases ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Feature Hover Tooltip Card */}
+      {hoveredFeature && (
+        <div
+          className="absolute z-30 pointer-events-none glass-panel p-3 rounded-xl border border-cyan-500/40 shadow-2xl max-w-xs text-xs animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            left: Math.min(hoveredFeature.x + 15, 600),
+            top: Math.max(hoveredFeature.y - 70, 20)
+          }}
+        >
+          <div className="font-bold text-white flex items-center justify-between gap-2">
+            <span>{hoveredFeature.props.name}</span>
+            <span className="font-mono text-[10px] text-yellow-400">
+              Score: {hoveredFeature.props.priority_score}
+            </span>
+          </div>
+          <div className="text-[10px] text-slate-400 mt-0.5">
+            Pop: {Number(hoveredFeature.props.population || hoveredFeature.props.estimated_population || 0).toLocaleString()}
+          </div>
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+              hoveredFeature.props.connectivity_status === "critical_isolated" ? "bg-red-500/20 text-red-300 border border-red-500/30" :
+              hoveredFeature.props.connectivity_status === "potentially_isolated" ? "bg-orange-500/20 text-orange-300 border border-orange-500/30" :
+              "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+            }`}>
+              {hoveredFeature.props.connectivity_status?.replace('_', ' ')}
+            </span>
+            <span className="text-[9px] text-slate-400">Click to focus</span>
+          </div>
+        </div>
       )}
+
+      {/* Tactical Bottom Legend Bar */}
+      <div className="absolute bottom-3 left-4 right-4 z-20 pointer-events-auto">
+        <div className="glass-panel px-4 py-2 rounded-xl flex items-center justify-between text-[11px] text-slate-300 border border-slate-700/60 overflow-x-auto scrollbar-none gap-4">
+          <div className="flex items-center gap-4 whitespace-nowrap">
+            <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] font-mono">Legend:</span>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#00E5FF] shadow-[0_0_6px_#00E5FF]" />
+              <span>Inundated Flood Water (SAR Mask)</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#FF3B30] shadow-[0_0_6px_#FF3B30]" />
+              <span>Severed / Cut-Off Road</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#10B981]" />
+              <span>Passable Dry Corridor</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#A855F7]" />
+              <span>Hospital / Health Facility</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#2563EB]" />
+              <span>NDRF Staging Base</span>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-center gap-2 text-slate-400 font-mono text-[10px]">
+            <span>10m Spatial Resolution</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

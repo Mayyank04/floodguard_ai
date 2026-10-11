@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "FloodGuard AI — Satellite Rescue Intelligence",
@@ -13,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark h-full">
-      <body className="h-full bg-[#07111F] text-slate-100 antialiased font-sans">
+    <html lang="en" className={`dark h-full ${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="h-full bg-[#050B14] text-slate-100 antialiased font-sans">
         <AppShell>{children}</AppShell>
       </body>
     </html>
