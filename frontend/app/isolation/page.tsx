@@ -5,7 +5,7 @@ import {
   Users, AlertTriangle, ShieldAlert, ArrowRight, Network,
   Navigation, MapPin, CheckCircle2, Info
 } from "lucide-react";
-import { fetchIsolationAnalysis } from "@/lib/api";
+import { fetchIsolationAnalysis, getPrimaryEventId } from "@/lib/api";
 import Link from "next/link";
 
 export default function IsolationAnalysisPage() {
@@ -17,7 +17,8 @@ export default function IsolationAnalysisPage() {
     async function load() {
       try {
         setLoading(true);
-        const res = await fetchIsolationAnalysis("6d5354bb-015e-4fb3-b050-d78fb1302910");
+        const eventId = await getPrimaryEventId();
+        const res = await fetchIsolationAnalysis(eventId);
         setIsolationData(res);
         if (res.isolated_settlements && res.isolated_settlements.length > 0) {
           setSelectedCommunity(res.isolated_settlements[0]);

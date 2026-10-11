@@ -5,7 +5,7 @@ import {
   Navigation, ShieldAlert, AlertTriangle, CheckCircle2,
   Clock, MapPin, ArrowRight, RefreshCw, Compass
 } from "lucide-react";
-import { fetchSettlements, fetchIsolationAnalysis, analyzeRoute } from "@/lib/api";
+import { fetchSettlements, fetchIsolationAnalysis, analyzeRoute, fetchMapLayers, getPrimaryEventId } from "@/lib/api";
 import FloodMap from "@/components/FloodMap";
 import Link from "next/link";
 
@@ -16,6 +16,7 @@ export default function RescuePlanningPage() {
   const [selectedSettlementId, setSelectedSettlementId] = useState<string>("");
   const [algorithm, setAlgorithm] = useState<string>("dijkstra");
 
+  const [layersData, setLayersData] = useState<any>(null);
   const [routeResult, setRouteResult] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,12 +25,15 @@ export default function RescuePlanningPage() {
     async function load() {
       try {
         setLoading(true);
-        const [stl, iso] = await Promise.all([
-          fetchSettlements("6d5354bb-015e-4fb3-b050-d78fb1302910"),
-          fetchIsolationAnalysis("6d5354bb-015e-4fb3-b050-d78fb1302910")
+        const eventId = await getPrimaryEventId();
+        const [stl, iso, mapLayers] = await Promise.all([
+          fetchSettlements(eventId),
+          fetchIsolationAnalysis(eventId),
+          fetchMapLayers(eventId)
         ]);
         setSettlements(stl);
         setBases(iso.rescue_bases || []);
+        setLayersData(mapLayers.layers);
         if (iso.rescue_bases?.length > 0) {
           setSelectedBaseId(iso.rescue_bases[0].id);
         }
@@ -49,8 +53,9 @@ export default function RescuePlanningPage() {
     if (!selectedBaseId || !selectedSettlementId) return;
     setIsCalculating(true);
     try {
+      const eventId = await getPrimaryEventId();
       const res = await analyzeRoute({
-        event_id: "6d5354bb-015e-4fb3-b050-d78fb1302910",
+        event_id: eventId,
         base_id: selectedBaseId,
         settlement_id: selectedSettlementId,
         algorithm: algorithm
@@ -177,9 +182,31 @@ export default function RescuePlanningPage() {
           </div>
         </div>
 
-        {/* Route Assessment Results Column */}
+        {/* Route Assessment Results & Map Column */}
         <div className="lg:col-span-2 flex flex-col gap-5">
-          {routeResult ? (
+          {/* Interactive Route Map */}
+          <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3 min-h-[380px]">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <Compass className="w-4 h-4 text-[#00D4FF]" />
+                Candidate Route Geospatial Overlay
+              </span>
+              <span className="text-[11px] text-slate-400">
+                {routeResult ? `Distance: ${routeResult.distance_km} km` : "Select base & destination to compute"}
+              </span>
+            </div>
+
+            <div className="w-full h-[320px] rounded-xl overflow-hidden border border-slate-800">
+              <FloodMap
+                layersData={layersData}
+                candidateRoute={routeResult}
+                floodOpacity={0.65}
+              />
+            </div>
+          </div>
+
+          {/* Route Stats & Warnings */}
+          {routeResult && (
             <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
                 <div>
@@ -230,14 +257,6 @@ export default function RescuePlanningPage() {
               <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-900/40 text-[11px] text-red-200 leading-relaxed">
                 {routeResult.safety_disclaimer}
               </div>
-            </div>
-          ) : (
-            <div className="glass-panel p-12 rounded-2xl flex flex-col items-center justify-center text-center gap-3">
-              <Compass className="w-12 h-12 text-slate-600 animate-pulse" />
-              <h3 className="text-lg font-bold text-slate-300">No Route Selected</h3>
-              <p className="text-xs text-slate-500 max-w-sm">
-                Select an origin rescue base and target destination community on the left to compute candidate routing.
-              </p>
             </div>
           )}
         </div>

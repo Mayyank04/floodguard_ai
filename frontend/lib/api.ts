@@ -6,6 +6,22 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+let cachedEventId: string | null = null;
+
+export async function getPrimaryEventId(): Promise<string> {
+  if (cachedEventId) return cachedEventId;
+  try {
+    const events = await fetchEvents();
+    if (events && events.length > 0) {
+      cachedEventId = events[0].id;
+      return events[0].id;
+    }
+  } catch (err) {
+    console.warn("Could not fetch primary event, using fallback:", err);
+  }
+  return "6d5354bb-015e-4fb3-b050-d78fb1302910";
+}
+
 export async function fetchEvents(): Promise<DisasterEvent[]> {
   try {
     const res = await fetch(`${API_BASE}/events`);

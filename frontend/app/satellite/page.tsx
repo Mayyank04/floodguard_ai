@@ -5,7 +5,7 @@ import {
   Satellite, Sliders, RefreshCw, Layers, CheckCircle2,
   Calendar, AlertCircle, ArrowRight, Download, Eye, Sparkles
 } from "lucide-react";
-import { triggerFloodDetection } from "@/lib/api";
+import { triggerFloodDetection, getPrimaryEventId } from "@/lib/api";
 
 export default function SatelliteIntelligencePage() {
   const [satelliteSource, setSatelliteSource] = useState<"Sentinel-1" | "Sentinel-2">("Sentinel-1");
@@ -20,8 +20,9 @@ export default function SatelliteIntelligencePage() {
   const handleRunAnalysis = async () => {
     setIsProcessing(true);
     try {
+      const eventId = await getPrimaryEventId();
       const res = await triggerFloodDetection({
-        event_id: "6d5354bb-015e-4fb3-b050-d78fb1302910",
+        event_id: eventId,
         satellite_source: satelliteSource,
         sensitivity_threshold_db: thresholdDb,
         filter_speckle: filterSpeckle

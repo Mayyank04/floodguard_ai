@@ -7,31 +7,32 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { fetchMapLayers, getPrimaryEventId } from "@/lib/api";
+
 export default function FloodAnalysisPage() {
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
-  const handleDownloadGeoJSON = () => {
-    // Generate and download GeoJSON
-    const geojsonData = {
-      type: "FeatureCollection",
-      metadata: {
-        source: "Sentinel-1 C-SAR IW GRDH",
-        region: "Barpeta & Lower Assam Basin",
-        flooded_area_sq_km: 412.8,
-        acquisition_date: "2022-06-20",
-        confidence: 0.94
-      },
-      features: []
-    };
-    const blob = new Blob([JSON.stringify(geojsonData, null, 2)], { type: "application/geo+json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "floodguard_assam_flood_mask_2022.geojson";
-    a.click();
-    URL.revokeObjectURL(url);
-    setDownloadSuccess(true);
-    setTimeout(() => setDownloadSuccess(false), 3000);
+  const handleDownloadGeoJSON = async () => {
+    try {
+      const eventId = await getPrimaryEventId();
+      const mapLayers = await fetchMapLayers(eventId);
+      const geojsonData = mapLayers?.layers?.flood_inundation || {
+        type: "FeatureCollection",
+        features: []
+      };
+
+      const blob = new Blob([JSON.stringify(geojsonData, null, 2)], { type: "application/geo+json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `floodguard_sar_flood_extent_${eventId}.geojson`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error downloading flood mask:", err);
+    }
   };
 
   return (

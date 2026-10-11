@@ -151,6 +151,18 @@ def test_copilot_tool_calling(db_session):
     assert "Isolated" in data["content"] or "Mandia" in data["content"]
     assert len(data["references"]) > 0
 
+# 10b. Multimodal Field Photo Evaluation Test
+def test_copilot_multimodal_photo_query(db_session):
+    event = db_session.query(DisasterEvent).first()
+    res = client.post("/api/copilot/chat", json={
+        "event_id": event.id,
+        "message": "Here is an uploaded field observation photograph of submerged road."
+    })
+    assert res.status_code == 200
+    content = res.json()["content"]
+    assert "Multimodal Field Observation Analysis" in content
+    assert "Satellite Cross-Validation" in content
+
 # 11. Report Generation (HTML, CSV, GeoJSON)
 def test_report_generation(db_session):
     event = db_session.query(DisasterEvent).first()

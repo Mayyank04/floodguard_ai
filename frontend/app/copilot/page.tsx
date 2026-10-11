@@ -5,7 +5,7 @@ import {
   Bot, Send, Sparkles, RefreshCw, Paperclip, CheckCircle2,
   AlertCircle, ShieldCheck, User, Image, FileText, CornerDownLeft
 } from "lucide-react";
-import { sendCopilotChat } from "@/lib/api";
+import { sendCopilotChat, getPrimaryEventId } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -63,9 +63,10 @@ How can I assist your emergency response operations today?`,
     setIsLoading(true);
 
     try {
+      const eventId = await getPrimaryEventId();
       const res = await sendCopilotChat(
         hadImage ? `${text} (Responder uploaded field damage observation photograph)` : text,
-        "6d5354bb-015e-4fb3-b050-d78fb1302910"
+        eventId
       );
 
       const assistantMsg: Message = {

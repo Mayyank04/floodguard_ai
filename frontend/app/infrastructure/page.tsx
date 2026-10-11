@@ -5,7 +5,7 @@ import {
   Building2, Navigation, AlertTriangle, CheckCircle2,
   ShieldAlert, Phone, MapPin, ExternalLink
 } from "lucide-react";
-import { fetchInfrastructure } from "@/lib/api";
+import { fetchInfrastructure, getPrimaryEventId } from "@/lib/api";
 import Link from "next/link";
 
 export default function InfrastructureIntelligencePage() {
@@ -17,7 +17,8 @@ export default function InfrastructureIntelligencePage() {
     async function load() {
       try {
         setLoading(true);
-        const res = await fetchInfrastructure("6d5354bb-015e-4fb3-b050-d78fb1302910");
+        const eventId = await getPrimaryEventId();
+        const res = await fetchInfrastructure(eventId);
         setData(res);
       } catch (e) {
         console.error(e);

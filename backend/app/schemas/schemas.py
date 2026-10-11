@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -14,9 +14,7 @@ class RegionBase(BaseModel):
 
 class RegionResponse(RegionBase):
     id: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SatelliteSceneResponse(BaseModel):
     id: str
@@ -30,9 +28,7 @@ class SatelliteSceneResponse(BaseModel):
     polarization: Optional[str] = "VV+VH"
     thumbnail_url: Optional[str] = None
     metadata_json: Optional[Dict[str, Any]] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DisasterEventBase(BaseModel):
     title: str
@@ -54,9 +50,7 @@ class DisasterEventResponse(DisasterEventBase):
     id: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FloodDetectionRequest(BaseModel):
     event_id: str
@@ -77,9 +71,7 @@ class FloodMaskResponse(BaseModel):
     raster_bounds: Optional[List[float]] = None
     metadata_json: Optional[Dict[str, Any]] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SettlementResponse(BaseModel):
     id: str
@@ -96,9 +88,7 @@ class SettlementResponse(BaseModel):
     priority_score: float
     priority_rank: int
     notes: Optional[str] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class InfrastructureAssetResponse(BaseModel):
     id: str
@@ -112,9 +102,7 @@ class InfrastructureAssetResponse(BaseModel):
     distance_to_flood_meters: float
     capacity: int
     contact_info: Optional[str] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RoadSegmentResponse(BaseModel):
     id: str
@@ -126,9 +114,7 @@ class RoadSegmentResponse(BaseModel):
     flood_intersection: bool
     potentially_exposed_length_km: float
     accessibility_status: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RescueBaseResponse(BaseModel):
     id: str
@@ -141,9 +127,7 @@ class RescueBaseResponse(BaseModel):
     personnel_count: int
     boats_count: int
     vehicles_count: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RouteAnalysisRequest(BaseModel):
     event_id: str
@@ -162,9 +146,7 @@ class RouteAssessmentResponse(BaseModel):
     waypoints_geojson: Dict[str, Any]
     flood_exposure_summary: str
     verification_status: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PriorityWeightSettings(BaseModel):
     population_weight: float = 0.30

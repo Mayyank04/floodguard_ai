@@ -182,8 +182,8 @@ def get_infrastructure(event_id: str, db: Session = Depends(get_db)):
         "exposed_assets_count": len(exposed_assets),
         "total_road_km": round(sum(r.length_km for r in roads), 1),
         "exposed_road_km": round(sum(r.potentially_exposed_length_km for r in exposed_roads), 1),
-        "assets": [InfrastructureAssetResponse.from_orm(a) for a in assets],
-        "roads": [RoadSegmentResponse.from_orm(r) for r in roads]
+        "assets": [InfrastructureAssetResponse.model_validate(a) for a in assets],
+        "roads": [RoadSegmentResponse.model_validate(r) for r in roads]
     }
 
 # -------------------------------------------------------------
@@ -210,9 +210,9 @@ def get_isolation_analysis(event_id: str, db: Session = Depends(get_db)):
         "isolated_settlements_count": len(isolated),
         "potentially_isolated_population": total_isolated_pop,
         "rescue_bases_active": len(bases),
-        "isolated_settlements": [SettlementResponse.from_orm(s) for s in isolated],
-        "all_settlements": [SettlementResponse.from_orm(s) for s in settlements],
-        "rescue_bases": [RescueBaseResponse.from_orm(b) for b in bases],
+        "isolated_settlements": [SettlementResponse.model_validate(s) for s in isolated],
+        "all_settlements": [SettlementResponse.model_validate(s) for s in settlements],
+        "rescue_bases": [RescueBaseResponse.model_validate(b) for b in bases],
         "network_assumptions": (
             "Modeled via NetworkX scenario graph removing all road segments intersecting "
             "Sentinel-1 SAR inundation polygons. Settlements without any unflooded graph path "

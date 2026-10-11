@@ -5,7 +5,7 @@ import {
   FileText, Download, Printer, CheckCircle2, RefreshCw,
   FileSpreadsheet, Globe, Eye
 } from "lucide-react";
-import { generateDisasterReport } from "@/lib/api";
+import { generateDisasterReport, getPrimaryEventId } from "@/lib/api";
 
 export default function DisasterReportsPage() {
   const [selectedFormat, setSelectedFormat] = useState<"PDF" | "CSV" | "GEOJSON">("PDF");
@@ -16,8 +16,9 @@ export default function DisasterReportsPage() {
     const f = fmt || selectedFormat;
     setIsGenerating(true);
     try {
+      const eventId = await getPrimaryEventId();
       const res = await generateDisasterReport({
-        event_id: "6d5354bb-015e-4fb3-b050-d78fb1302910",
+        event_id: eventId,
         format: f,
         title: "Assam Brahmaputra Basin Flood Intelligence Brief"
       });

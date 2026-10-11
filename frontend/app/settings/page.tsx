@@ -6,6 +6,8 @@ import {
   ShieldCheck, AlertTriangle, Save
 } from "lucide-react";
 
+import { fetchPriorities, getPrimaryEventId } from "@/lib/api";
+
 export default function SettingsPage() {
   const [popWeight, setPopWeight] = useState(30);
   const [isoWeight, setIsoWeight] = useState(30);
@@ -14,12 +16,28 @@ export default function SettingsPage() {
   const [uncWeight, setUncWeight] = useState(5);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const total = popWeight + isoWeight + floodWeight + infraWeight + uncWeight;
 
-  const handleSave = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const eventId = await getPrimaryEventId();
+      await fetchPriorities(eventId, {
+        pop: popWeight / 100,
+        iso: isoWeight / 100,
+        flood: floodWeight / 100,
+        infra: infraWeight / 100,
+        unc: uncWeight / 100
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error saving weights to API:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleResetDefaults = () => {
