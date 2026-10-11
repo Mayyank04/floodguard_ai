@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07111F;
+  --foreground: #F8FAFC;
+  --sidebar-bg: #0B1728;
+  --card-bg: #102238;
+  --card-border: #1E293B;
+  --accent-cyan: #00D4FF;
+  --accent-green: #22C55E;
+  --alert-red: #EF4444;
+  --alert-orange: #F97316;
+  --alert-yellow: #FACC15;
+  --text-muted: #94A3B8;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #07111F;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00D4FF;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(16, 34, 56, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(0, 212, 255, 0.12);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.35);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
+}
+
+/* MapLibre Container Fill */
+.maplibre-container {
+  width: 100%;
+  height: 100%;
+}
