@@ -51,7 +51,7 @@ const DEMO_STEPS = [
       "Specular backscatter drop identifies open floodwater across lower Assam basin",
       "Calculated Inundated Area: 412.80 km² across the Barpeta watershed",
       "Cleaned polygon geometries with topological validity (Shapely unary_union)",
-      "Sensor Detection Confidence: 94.2% verified"
+      "Quality Indicator: ESA Copernicus QA Passed (Radiometric Calibration & Speckle Filtered)"
     ],
     actionText: "Examine Flood Mask & Physics",
     link: "/flood-analysis"

@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from shapely.geometry import Polygon, Point, LineString
 from app.main import app
 from app.core.database import SessionLocal
-from app.models.models import DisasterEvent, Settlement, InfrastructureAsset, FloodMask
+from app.models.models import DisasterEvent, Settlement, InfrastructureAsset, FloodMask, RoadSegment, FieldObservation
 from app.services.satellite_engine import satellite_engine
 from app.services.infrastructure_service import infrastructure_service
 from app.services.isolation_service import isolation_engine
@@ -225,3 +225,69 @@ def test_custom_priority_weights(db_session):
     priorities = res.json()["priorities"]
     assert len(priorities) > 0
     assert priorities[0]["weights_used"]["population"] > 0.5
+
+# 15. Road Status Verification & Graph Recalculation
+def test_road_status_verification_and_recalculation(db_session):
+    event = db_session.query(DisasterEvent).first()
+    road = db_session.query(RoadSegment).filter(RoadSegment.event_id == event.id).first()
+    assert road is not None
+
+    # Analyst marks road as reported_open
+    patch_res = client.patch(f"/api/roads/{road.id}/status", json={
+        "verification_status": "reported_open",
+        "reporter": "NDRF Lead Scout Maj. Sharma",
+        "evidence_notes": "Embankment surveyed; shallow runoff navigable by 4x4 trucks."
+    })
+    assert patch_res.status_code == 200
+    updated_road = patch_res.json()
+    assert updated_road["verification_status"] == "reported_open"
+    assert updated_road["verified_by"] == "NDRF Lead Scout Maj. Sharma"
+    assert updated_road["accessibility_status"] == "accessible"
+
+# 16. Multimodal Field Observation Lifecycle
+def test_field_observation_workflow(db_session):
+    event = db_session.query(DisasterEvent).first()
+
+    # 1. Submit observation
+    post_res = client.post("/api/observations", json={
+        "event_id": event.id,
+        "observer_name": "SDRF Tactical Unit 3",
+        "observation_type": "embankment_breach",
+        "latitude": 26.215,
+        "longitude": 90.985,
+        "description": "Severe 20m breach along Beki river dyke; water rapidly flowing across feeder road.",
+        "water_depth_meters": 1.4,
+        "nearest_feature_name": "Mandia Char Feeder Rd"
+    })
+    assert post_res.status_code == 200
+    obs = post_res.json()
+    obs_id = obs["id"]
+    assert obs["verification_status"] == "pending"
+    assert "Automated Visual Analysis" in obs["ai_interpretation"]
+
+    # 2. Review and verify
+    verify_res = client.patch(f"/api/observations/{obs_id}/verify", json={
+        "status": "verified",
+        "reviewer_name": "Incident Commander Col. Barua",
+        "review_notes": "Confirmed by district flood control drone."
+    })
+    assert verify_res.status_code == 200
+    verified_obs = verify_res.json()
+    assert verified_obs["verification_status"] == "verified"
+    assert verified_obs["verified"] is True
+    assert verified_obs["reviewed_by"] == "Incident Commander Col. Barua"
+
+    # 3. List observations
+    list_res = client.get(f"/api/observations/{event.id}")
+    assert list_res.status_code == 200
+    assert len(list_res.json()) >= 1
+
+# 17. Data Sources Provenance Catalog
+def test_data_sources_catalog():
+    res = client.get("/api/data-sources")
+    assert res.status_code == 200
+    data = res.json()
+    assert "satellite_sensors" in data
+    assert "geospatial_vectors" in data
+    assert "operational_frameworks" in data
+    assert len(data["satellite_sensors"]) >= 2

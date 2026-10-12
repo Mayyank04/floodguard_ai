@@ -140,7 +140,7 @@ export default function SatelliteIntelligencePage() {
             <div className="flex items-center gap-5">
               <span>Detected Inundation: <strong className="text-white font-mono">{detectionResult?.flooded_area_sq_km || 412.8} km²</strong></span>
               <span>Polarization: <strong className="text-white font-mono">VV+VH Dual-Pol</strong></span>
-              <span>Confidence: <strong className="text-[#10B981] font-mono">94.2% Verified</strong></span>
+              <span>Quality: <strong className="text-[#10B981] font-mono">ESA QA Validated</strong></span>
             </div>
             <span className="text-[11px] text-slate-500">Source: Copernicus Data Space Ecosystem (Track 121 Descending)</span>
           </div>

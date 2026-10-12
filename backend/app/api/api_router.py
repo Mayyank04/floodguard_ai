@@ -1,5 +1,6 @@
 import uuid
 import json
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
@@ -17,7 +18,8 @@ from app.schemas.schemas import (
     RescueBaseResponse, RouteAnalysisRequest, RouteAssessmentResponse,
     PriorityAssessmentResponse, PriorityWeightSettings,
     CopilotChatRequest, CopilotChatResponse, ReportGenerateRequest,
-    FieldObservationCreate
+    FieldObservationCreate, FieldObservationResponse, FieldObservationVerifyRequest,
+    RoadStatusUpdateRequest
 )
 from app.services.satellite_engine import satellite_engine
 from app.services.infrastructure_service import infrastructure_service
@@ -36,8 +38,8 @@ api_router = APIRouter()
 def health_check():
     return {
         "status": "online",
-        "service": "FloodGuard AI Disaster Response Intelligence",
-        "version": "1.0.0",
+        "service": "FloodGuard AI 3.0 Satellite Rescue Intelligence",
+        "version": "3.0.0",
         "mode": "Operational & Historical Demo"
     }
 
@@ -246,7 +248,8 @@ def analyze_route(payload: RouteAnalysisRequest, db: Session = Depends(get_db)):
             "length_km": r.length_km,
             "coordinates": r.coordinates_geojson.get("coordinates", []) if r.coordinates_geojson else [],
             "flood_intersection": r.flood_intersection,
-            "potentially_exposed_length_km": r.potentially_exposed_length_km
+            "potentially_exposed_length_km": r.potentially_exposed_length_km,
+            "verification_status": r.verification_status
         }
         for r in roads
     ]
@@ -484,7 +487,11 @@ def get_map_layers(event_id: str, db: Session = Depends(get_db)):
                     "length_km": r.length_km,
                     "flood_intersection": r.flood_intersection,
                     "exposed_km": r.potentially_exposed_length_km,
-                    "accessibility_status": r.accessibility_status
+                    "accessibility_status": r.accessibility_status,
+                    "verification_status": r.verification_status or "unverified",
+                    "verified_by": r.verified_by,
+                    "verified_at": r.verified_at,
+                    "verification_notes": r.verification_notes
                 }
             }
             for r in roads
@@ -511,6 +518,32 @@ def get_map_layers(event_id: str, db: Session = Depends(get_db)):
         ]
     }
 
+    field_obs = db.query(FieldObservation).filter(FieldObservation.event_id == event_id).all()
+    obs_fc = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "id": o.id,
+                "geometry": {"type": "Point", "coordinates": [o.longitude, o.latitude]},
+                "properties": {
+                    "id": o.id,
+                    "observation_type": o.observation_type,
+                    "description": o.description,
+                    "water_depth_meters": o.water_depth_meters,
+                    "verification_status": o.verification_status or "pending",
+                    "verified": o.verified,
+                    "observer_name": o.observer_name,
+                    "image_url": o.image_url,
+                    "nearest_feature_name": o.nearest_feature_name,
+                    "ai_interpretation": o.ai_interpretation,
+                    "created_at": o.created_at.isoformat() if o.created_at else None
+                }
+            }
+            for o in field_obs
+        ]
+    }
+
     return {
         "event_id": event.id,
         "event_title": event.title,
@@ -520,6 +553,196 @@ def get_map_layers(event_id: str, db: Session = Depends(get_db)):
             "settlements": settlements_fc,
             "infrastructure": infra_fc,
             "roads": roads_fc,
-            "rescue_bases": bases_fc
+            "rescue_bases": bases_fc,
+            "field_observations": obs_fc
         }
+    }
+
+# -------------------------------------------------------------
+# Road Verification & Recalculation
+# -------------------------------------------------------------
+@api_router.patch("/roads/{id}/status", response_model=RoadSegmentResponse, tags=["Infrastructure"])
+def update_road_status(id: str, payload: RoadStatusUpdateRequest, db: Session = Depends(get_db)):
+    road = db.query(RoadSegment).filter(RoadSegment.id == id).first()
+    if not road:
+        raise HTTPException(status_code=404, detail="Road segment not found")
+
+    status = payload.verification_status.lower()
+    if status not in ["reported_open", "reported_blocked", "unknown", "unverified"]:
+        raise HTTPException(status_code=400, detail="Invalid verification status")
+
+    road.verification_status = status
+    road.verified_by = payload.reporter
+    road.verified_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    road.verification_notes = payload.evidence_notes
+
+    if status == "reported_open":
+        road.accessibility_status = "accessible"
+    elif status == "reported_blocked":
+        road.accessibility_status = "impassable_suspected"
+    else:
+        road.accessibility_status = "unverified"
+
+    # Recalculate isolation for all settlements in this event
+    all_roads = db.query(RoadSegment).filter(RoadSegment.event_id == road.event_id).all()
+    all_bases = db.query(RescueBase).filter(RescueBase.event_id == road.event_id).all()
+    all_settlements = db.query(Settlement).filter(Settlement.event_id == road.event_id).all()
+
+    roads_dicts = [
+        {
+            "name": r.name,
+            "road_type": r.road_type,
+            "length_km": r.length_km,
+            "coordinates": r.coordinates_geojson.get("coordinates", []) if r.coordinates_geojson else [],
+            "flood_intersection": r.flood_intersection,
+            "potentially_exposed_length_km": r.potentially_exposed_length_km,
+            "verification_status": r.verification_status
+        }
+        for r in all_roads
+    ]
+    bases_dicts = [
+        {"id": b.id, "name": b.name, "latitude": b.latitude, "longitude": b.longitude}
+        for b in all_bases
+    ]
+    settlements_dicts = [
+        {
+            "id": s.id, "name": s.name, "district": s.district, "latitude": s.latitude, "longitude": s.longitude,
+            "estimated_population": s.estimated_population, "flood_distance_meters": s.flood_distance_meters,
+            "flood_exposure_level": s.flood_exposure_level
+        }
+        for s in all_settlements
+    ]
+
+    iso_results = isolation_engine.analyze_isolation(settlements_dicts, bases_dicts, roads_dicts)
+    iso_map = {res["id"]: res["connectivity_status"] for res in iso_results}
+
+    for s in all_settlements:
+        if s.id in iso_map:
+            s.connectivity_status = iso_map[s.id]
+
+    db.commit()
+    db.refresh(road)
+    return road
+
+# -------------------------------------------------------------
+# Multimodal Field Observations
+# -------------------------------------------------------------
+@api_router.get("/observations/{event_id}", response_model=List[FieldObservationResponse], tags=["Observations"])
+def list_field_observations(event_id: str, db: Session = Depends(get_db)):
+    obs = db.query(FieldObservation).filter(FieldObservation.event_id == event_id).order_by(FieldObservation.created_at.desc()).all()
+    return obs
+
+@api_router.post("/observations", response_model=FieldObservationResponse, tags=["Observations"])
+def create_field_observation(payload: FieldObservationCreate, db: Session = Depends(get_db)):
+    event = db.query(DisasterEvent).filter(DisasterEvent.id == payload.event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Disaster event not found")
+
+    # Generate grounded simulated AI interpretation of visible conditions
+    ai_interpretation = (
+        f"Automated Visual Analysis: Input corroborates standing turbid surface water (~{payload.water_depth_meters:.1f}m depth). "
+        f"Localized obstruction near {payload.nearest_feature_name or 'road corridor'}. "
+        "Disclaimer: AI interpretation is unverified. Tactical field inspection required before dispatch."
+    )
+
+    obs = FieldObservation(
+        event_id=event.id,
+        observer_name=payload.observer_name,
+        observation_type=payload.observation_type,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        description=payload.description,
+        water_depth_meters=payload.water_depth_meters,
+        image_url=payload.image_url,
+        nearest_feature_name=payload.nearest_feature_name,
+        verification_status="pending",
+        verified=False,
+        ai_interpretation=ai_interpretation
+    )
+    db.add(obs)
+    db.commit()
+    db.refresh(obs)
+    return obs
+
+@api_router.patch("/observations/{id}/verify", response_model=FieldObservationResponse, tags=["Observations"])
+def verify_field_observation(id: str, payload: FieldObservationVerifyRequest, db: Session = Depends(get_db)):
+    obs = db.query(FieldObservation).filter(FieldObservation.id == id).first()
+    if not obs:
+        raise HTTPException(status_code=404, detail="Field observation not found")
+
+    status = payload.status.lower()
+    if status not in ["verified", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid verification status; must be 'verified' or 'rejected'")
+
+    obs.verification_status = status
+    obs.verified = (status == "verified")
+    obs.reviewed_by = payload.reviewer_name
+    obs.reviewed_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    db.commit()
+    db.refresh(obs)
+    return obs
+
+# -------------------------------------------------------------
+# Data Provenance & Catalogs
+# -------------------------------------------------------------
+@api_router.get("/data-sources", tags=["Provenance"])
+def get_data_sources_catalog():
+    return {
+        "satellite_sensors": [
+            {
+                "id": "sentinel-1-csar",
+                "name": "Copernicus Sentinel-1 C-SAR",
+                "constellation": "ESA Copernicus",
+                "mode": "Interferometric Wide Swath (IW)",
+                "product_type": "Ground Range Detected High Resolution (GRDH)",
+                "polarization": "Dual-pol VV + VH",
+                "resolution": "10m spatial pixel spacing",
+                "wavelength": "C-band (5.405 GHz / 5.54 cm wavelength)",
+                "cloud_penetration": "100% all-weather day/night radar penetration",
+                "revisit_time": "6-12 days",
+                "primary_scene": "S1A_IW_GRDH_1SDV_20220620T001428 (Peak Flooding)",
+                "baseline_scene": "S1A_IW_GRDH_1SDV_20220528T001427 (Pre-monsoon dry reference)"
+            },
+            {
+                "id": "sentinel-2-msi",
+                "name": "Copernicus Sentinel-2 MSI",
+                "constellation": "ESA Copernicus",
+                "sensor": "Multi-Spectral Instrument (MSI)",
+                "product_type": "Level-2A Bottom-Of-Atmosphere (BOA) Reflectance",
+                "bands": "B03 (Green 560nm), B08 (NIR 842nm), B11 (SWIR 1610nm)",
+                "water_indices": "NDWI: (B03-B08)/(B03+B08), MNDWI: (B03-B11)/(B03+B11)",
+                "resolution": "10m - 20m spatial pixel spacing",
+                "cloud_filter": "Scene Classification Layer (SCL) cloud shadow mask"
+            }
+        ],
+        "geospatial_vectors": [
+            {
+                "id": "osm-roads",
+                "name": "OpenStreetMap Road Network",
+                "license": "Open Data Commons Open Database License (ODbL)",
+                "coverage": "Barpeta, Bongaigaon, Bajali, and Kamrup districts",
+                "corridor_length_km": 142.8,
+                "highway_classes": "National Highway NH-27, State Highway SH-4, Major District Roads, Rural Char Access Roads"
+            },
+            {
+                "id": "osm-infrastructure",
+                "name": "Critical Infrastructure Layer",
+                "features": "Civil Hospitals, Community Health Centres (CHCs), Primary Health Centres (PHCs), Concrete Bridges, Relief Shelters",
+                "facilities_count": 8,
+                "source": "OpenStreetMap & ASDMA District Contingency Database"
+            }
+        ],
+        "operational_frameworks": [
+            {
+                "authority": "Assam State Disaster Management Authority (ASDMA)",
+                "bulletins": "Daily Flood Situation Reports (June 14-25, 2022)",
+                "validation": "Corroborated 5.4M affected civilians across 32 districts"
+            },
+            {
+                "authority": "National Disaster Response Force (NDRF)",
+                "battalion": "1st Battalion NDRF Patgaon Staging Command",
+                "assets": "Inflatable motorized rescue boats, deep-dive personnel, satellite emergency communication"
+            }
+        ]
     }

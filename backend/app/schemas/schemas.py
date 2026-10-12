@@ -114,7 +114,16 @@ class RoadSegmentResponse(BaseModel):
     flood_intersection: bool
     potentially_exposed_length_km: float
     accessibility_status: str
+    verification_status: str = "unverified"
+    verified_by: Optional[str] = None
+    verified_at: Optional[str] = None
+    verification_notes: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
+
+class RoadStatusUpdateRequest(BaseModel):
+    verification_status: str # reported_open, reported_blocked, unknown, unverified
+    reporter: str = "Disaster Operations Analyst"
+    evidence_notes: Optional[str] = None
 
 class RescueBaseResponse(BaseModel):
     id: str
@@ -190,9 +199,34 @@ class ReportGenerateRequest(BaseModel):
 class FieldObservationCreate(BaseModel):
     event_id: str
     observer_name: str = "NDRF Field Scout"
-    observation_type: str
+    observation_type: str = "flood_depth" # flood_depth, bridge_submerged, embankment_breach, shelter_status, road_blocked
     latitude: float
     longitude: float
     description: str
     water_depth_meters: float = 0.0
     image_url: Optional[str] = None
+    nearest_feature_name: Optional[str] = None
+
+class FieldObservationResponse(BaseModel):
+    id: str
+    event_id: str
+    observer_name: str
+    observation_type: str
+    latitude: float
+    longitude: float
+    description: str
+    water_depth_meters: float
+    image_url: Optional[str] = None
+    verified: bool = False
+    verification_status: str = "pending" # pending, verified, rejected
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    ai_interpretation: Optional[str] = None
+    nearest_feature_name: Optional[str] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class FieldObservationVerifyRequest(BaseModel):
+    status: str # verified, rejected
+    reviewer_name: str = "Disaster Operations Lead"
+    review_notes: Optional[str] = None

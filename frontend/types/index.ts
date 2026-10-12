@@ -59,6 +59,10 @@ export interface RoadSegment {
   flood_intersection: boolean;
   potentially_exposed_length_km: number;
   accessibility_status: "accessible" | "potentially_inundated" | "impassable_suspected" | "unverified";
+  verification_status?: "reported_open" | "reported_blocked" | "unknown" | "unverified";
+  verified_by?: string;
+  verified_at?: string;
+  verification_notes?: string;
 }
 
 export interface RescueBase {
@@ -113,6 +117,10 @@ export interface MapLayersResponse {
       type: "FeatureCollection";
       features: any[];
     };
+    field_observations?: {
+      type: "FeatureCollection";
+      features: any[];
+    };
   };
 }
 
@@ -161,4 +169,62 @@ export interface CopilotMessage {
   tool_calls?: { tool: string; result?: any }[];
   references?: { source: string; date?: string; id?: string }[];
   timestamp?: string;
+}
+
+export interface FieldObservation {
+  id: string;
+  event_id: string;
+  observer_name: string;
+  observation_type: "flood_depth" | "bridge_submerged" | "embankment_breach" | "shelter_status" | "road_blocked";
+  latitude: number;
+  longitude: number;
+  description: string;
+  water_depth_meters: number;
+  image_url?: string;
+  verified: boolean;
+  verification_status: "pending" | "verified" | "rejected";
+  reviewed_by?: string;
+  reviewed_at?: string;
+  ai_interpretation?: string;
+  nearest_feature_name?: string;
+  created_at: string;
+}
+
+export interface DataSourcesCatalog {
+  satellite_sensors: Array<{
+    id: string;
+    name: string;
+    constellation: string;
+    mode?: string;
+    sensor?: string;
+    product_type: string;
+    polarization?: string;
+    bands?: string;
+    resolution: string;
+    wavelength?: string;
+    cloud_penetration?: string;
+    cloud_filter?: string;
+    revisit_time?: string;
+    primary_scene?: string;
+    baseline_scene?: string;
+    water_indices?: string;
+  }>;
+  geospatial_vectors: Array<{
+    id: string;
+    name: string;
+    license?: string;
+    coverage?: string;
+    corridor_length_km?: number;
+    highway_classes?: string;
+    features?: string;
+    facilities_count?: number;
+    source?: string;
+  }>;
+  operational_frameworks: Array<{
+    authority: string;
+    bulletins?: string;
+    battalion?: string;
+    validation?: string;
+    assets?: string;
+  }>;
 }

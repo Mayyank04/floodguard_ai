@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import {
   Shield, Satellite, Building2, Users, Navigation,
   Bot, History, FileText, Settings, Radio, Activity,
-  Layers, MapPin, Globe, ChevronRight
+  Layers, MapPin, Globe, ChevronRight, Camera, Database,
+  FileCheck2, Compass
 } from "lucide-react";
 
 interface NavGroup {
@@ -21,34 +22,36 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    group: "Operations",
+    group: "Operations & Mission",
     items: [
-      { name: "Command Center", href: "/command", icon: Activity },
-      { name: "Community Isolation", href: "/isolation", icon: Users, badge: "Graph" },
-      { name: "Rescue Route Planner", href: "/routing", icon: Navigation },
+      { name: "Overview", href: "/", icon: Shield },
+      { name: "Command Center", href: "/command", icon: Activity, badge: "GIS" },
+      { name: "Route Planning", href: "/routing", icon: Navigation },
+      { name: "Incident Reports", href: "/incidents", icon: Camera, badge: "Field" },
     ]
   },
   {
     group: "Geospatial Intelligence",
     items: [
-      { name: "Satellite Radar Viewer", href: "/satellite", icon: Satellite, badge: "S-1 SAR" },
-      { name: "Flood Extent Analysis", href: "/flood-analysis", icon: Layers },
-      { name: "Critical Infrastructure", href: "/infrastructure", icon: Building2 },
+      { name: "Satellite Analysis", href: "/satellite", icon: Satellite, badge: "S-1 SAR" },
+      { name: "Flood Mapping", href: "/flood-analysis", icon: Layers },
+      { name: "Infrastructure", href: "/infrastructure", icon: Building2 },
+      { name: "Communities", href: "/isolation", icon: Users, badge: "Graph" },
     ]
   },
   {
-    group: "Response & Planning",
+    group: "Decision Support & Data",
     items: [
-      { name: "Disaster Copilot", href: "/copilot", icon: Bot, badge: "Gemini" },
-      { name: "Historical Archive", href: "/events", icon: History },
+      { name: "AI Copilot", href: "/copilot", icon: Bot, badge: "Gemini" },
+      { name: "Historical Events", href: "/events", icon: History },
+      { name: "Data Sources", href: "/data-sources", icon: Database, badge: "STAC" },
       { name: "Assessment Reports", href: "/reports", icon: FileText },
     ]
   },
   {
-    group: "Settings",
+    group: "Configuration",
     items: [
-      { name: "Priority Weights", href: "/settings", icon: Settings },
-      { name: "Product Overview", href: "/", icon: Shield },
+      { name: "Settings & Weights", href: "/settings", icon: Settings },
     ]
   }
 ];

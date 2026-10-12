@@ -7,9 +7,11 @@ import {
   Layers, Eye, EyeOff, ZoomIn, ZoomOut, Compass,
   MapPin, Maximize2, Minimize2, Navigation, Shield,
   Search, Crosshair, ChevronDown, ChevronUp, AlertCircle,
-  Building2, Hospital, Radio, RefreshCw, X
+  Building2, Hospital, Radio, RefreshCw, X, Download,
+  Ruler, Camera, CheckCircle2, XCircle, AlertTriangle
 } from "lucide-react";
 import { BASEMAPS, DEFAULT_BASEMAP_ID, BasemapConfig } from "./basemaps";
+import { updateRoadStatus, verifyFieldObservation } from "@/lib/api";
 
 export interface FloodGuardMapProps {
   layersData?: any;
@@ -17,6 +19,7 @@ export interface FloodGuardMapProps {
   candidateRoute?: any;
   onSelectSettlement?: (settlement: any) => void;
   onSelectRoad?: (road: any) => void;
+  onRoadStatusUpdated?: () => void;
   floodOpacity?: number;
   initialCenter?: [number, number]; // [lng, lat]
   initialZoom?: number;
@@ -31,12 +34,25 @@ const QUICK_LOCATIONS = [
   { name: "Full Flood Basin", coords: [91.01, 26.32], zoom: 10 },
 ];
 
+function calculateHaversineDistance(lon1: number, lat1: number, lon2: number, lat2: number) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function FloodGuardMap({
   layersData,
   selectedSettlement,
   candidateRoute,
   onSelectSettlement,
   onSelectRoad,
+  onRoadStatusUpdated,
   floodOpacity = 0.65,
   initialCenter = [91.01, 26.32],
   initialZoom = 10,
@@ -52,6 +68,11 @@ export default function FloodGuardMap({
   const [layersMenuOpen, setLayersMenuOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Measurement tool state
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
+  const [measureDistanceKm, setMeasureDistanceKm] = useState(0);
+
   // Mouse coordinate HUD
   const [mouseCoords, setMouseCoords] = useState<{ lat: string; lng: string }>({
     lat: initialCenter[1].toFixed(4),
@@ -61,9 +82,16 @@ export default function FloodGuardMap({
 
   // Feature inspection drawer state
   const [activeFeature, setActiveFeature] = useState<{
-    type: "settlement" | "road" | "asset";
+    type: "settlement" | "road" | "asset" | "observation";
     data: any;
   } | null>(null);
+
+  // Road verification form state
+  const [roadVerifyStatus, setRoadVerifyStatus] = useState<string>("reported_open");
+  const [roadReporter, setRoadReporter] = useState<string>("NDRF Recon Scout");
+  const [roadVerifyNotes, setRoadVerifyNotes] = useState<string>("");
+  const [roadSubmitting, setRoadSubmitting] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
 
   // Layer visibility state
   const [activeLayers, setActiveLayers] = useState({
@@ -72,7 +100,8 @@ export default function FloodGuardMap({
     settlements: true,
     infrastructure: true,
     bases: true,
-    routes: true
+    routes: true,
+    observations: true
   });
 
   // Safe layer initialization & source binding
@@ -142,9 +171,13 @@ export default function FloodGuardMap({
           paint: {
             "line-color": [
               "case",
+              ["==", ["get", "verification_status"], "reported_open"],
+              "#10B981", // Explicitly verified open by field personnel
+              ["==", ["get", "verification_status"], "reported_blocked"],
+              "#EF4444", // Explicitly reported blocked
               ["get", "flood_intersection"],
-              "#EF4444", // Red = severed/intersected
-              "#10B981"  // Emerald = open corridor
+              "#F59E0B", // Intersects satellite flood water
+              "#3B82F6"  // Standard passable road
             ],
             "line-width": [
               "case",
@@ -161,6 +194,8 @@ export default function FloodGuardMap({
           if (e.features && e.features[0]) {
             const props = e.features[0].properties;
             setActiveFeature({ type: "road", data: props });
+            setRoadVerifyStatus(props.verification_status === "reported_blocked" ? "reported_blocked" : "reported_open");
+            setVerifyMessage(null);
             if (onSelectRoad) onSelectRoad(props);
           }
         });
@@ -337,7 +372,144 @@ export default function FloodGuardMap({
         });
       }
     }
+
+    // 7. Field Observations Layer
+    if (layersData.field_observations) {
+      if (m.getSource("obs-source")) {
+        (m.getSource("obs-source") as maplibregl.GeoJSONSource).setData(layersData.field_observations);
+      } else {
+        m.addSource("obs-source", {
+          type: "geojson",
+          data: layersData.field_observations
+        });
+
+        m.addLayer({
+          id: "obs-circles",
+          type: "circle",
+          source: "obs-source",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": [
+              "match",
+              ["get", "verification_status"],
+              "verified", "#10B981",
+              "rejected", "#64748B",
+              "#F59E0B"
+            ],
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#FFFFFF"
+          }
+        });
+
+        m.on("click", "obs-circles", (e) => {
+          if (e.features && e.features[0]) {
+            setActiveFeature({ type: "observation", data: e.features[0].properties });
+          }
+        });
+
+        m.on("mouseenter", "obs-circles", () => {
+          m.getCanvas().style.cursor = "pointer";
+        });
+        m.on("mouseleave", "obs-circles", () => {
+          m.getCanvas().style.cursor = "";
+        });
+      }
+    }
   }, [layersData, candidateRoute, floodOpacity, onSelectSettlement, onSelectRoad]);
+
+  // Measurement tool source sync
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const m = map.current;
+
+    const measureGeoJSON: any = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: measurePoints
+          },
+          properties: {}
+        },
+        ...measurePoints.map((pt, i) => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: pt
+          },
+          properties: { index: i }
+        }))
+      ]
+    };
+
+    if (m.getSource("measure-source")) {
+      (m.getSource("measure-source") as maplibregl.GeoJSONSource).setData(measureGeoJSON);
+    } else {
+      m.addSource("measure-source", {
+        type: "geojson",
+        data: measureGeoJSON
+      });
+
+      m.addLayer({
+        id: "measure-lines",
+        type: "line",
+        source: "measure-source",
+        filter: ["==", "$type", "LineString"],
+        paint: {
+          "line-color": "#F59E0B",
+          "line-width": 3,
+          "line-dasharray": [2, 2]
+        }
+      });
+
+      m.addLayer({
+        id: "measure-points",
+        type: "circle",
+        source: "measure-source",
+        filter: ["==", "$type", "Point"],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#F59E0B",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#FFFFFF"
+        }
+      });
+    }
+  }, [measurePoints, mapLoaded]);
+
+  // Handle map clicks in measurement mode
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const m = map.current;
+
+    const handleMapClick = (e: maplibregl.MapMouseEvent) => {
+      if (!measureMode) return;
+      const newPt: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      setMeasurePoints((prev) => {
+        const next = [...prev, newPt];
+        if (next.length > 1) {
+          let dist = 0;
+          for (let i = 0; i < next.length - 1; i++) {
+            dist += calculateHaversineDistance(next[i][0], next[i][1], next[i + 1][0], next[i + 1][1]);
+          }
+          setMeasureDistanceKm(round(dist, 2));
+        }
+        return next;
+      });
+    };
+
+    m.on("click", handleMapClick);
+    return () => {
+      m.off("click", handleMapClick);
+    };
+  }, [measureMode, mapLoaded]);
+
+  function round(val: number, precision: number) {
+    const factor = Math.pow(10, precision);
+    return Math.round(val * factor) / factor;
+  }
 
   // Initialize MapLibre instance
   useEffect(() => {
@@ -365,7 +537,6 @@ export default function FloodGuardMap({
 
       map.current.on("error", (e) => {
         console.warn("MapLibre event error:", e);
-        // Do not crash on transient tile 404s
       });
 
       map.current.on("mousemove", (e) => {
@@ -405,97 +576,104 @@ export default function FloodGuardMap({
     }
   }, [floodOpacity, mapLoaded]);
 
-  // Pan to selected settlement if passed as prop
-  useEffect(() => {
-    if (!map.current || !selectedSettlement) return;
-    const lng = selectedSettlement.longitude;
-    const lat = selectedSettlement.latitude;
-    if (lng && lat) {
-      map.current.flyTo({
-        center: [lng, lat],
-        zoom: 12.5,
-        speed: 1.2
-      });
-      setActiveFeature({ type: "settlement", data: selectedSettlement });
-    }
-  }, [selectedSettlement]);
-
-  // Basemap switch handler
+  // Switch basemap safely preserving layers
   const switchBasemap = (basemapId: string) => {
     if (!map.current || basemapId === currentBasemap) return;
-    const cfg = BASEMAPS[basemapId];
-    if (!cfg) return;
-
     setCurrentBasemap(basemapId);
-    map.current.setStyle(cfg.style);
+    const newStyle = BASEMAPS[basemapId]?.style;
+    if (newStyle) {
+      map.current.setStyle(newStyle);
+      map.current.once("style.load", () => {
+        if (map.current) {
+          syncLayersToMap(map.current);
+        }
+      });
+    }
+  };
 
-    map.current.once("style.load", () => {
-      setMapLoaded(true);
-      if (map.current) {
-        syncLayersToMap(map.current);
+  // Toggle individual GIS layers
+  const toggleLayer = (layerKey: keyof typeof activeLayers) => {
+    const nextState = !activeLayers[layerKey];
+    setActiveLayers((prev) => ({ ...prev, [layerKey]: nextState }));
+
+    if (!map.current) return;
+    const m = map.current;
+
+    const layerMap: Record<string, string[]> = {
+      flood: ["flood-fill", "flood-outline"],
+      roads: ["roads-casing", "roads-lines"],
+      settlements: ["settlements-glow", "settlements-circles"],
+      infrastructure: ["infra-circles"],
+      bases: ["bases-circles"],
+      routes: ["candidate-route-glow", "candidate-route-line"],
+      observations: ["obs-circles"]
+    };
+
+    const targetLayerIds = layerMap[layerKey] || [];
+    targetLayerIds.forEach((id) => {
+      if (m.getLayer(id)) {
+        m.setLayoutProperty(id, "visibility", nextState ? "visible" : "none");
       }
     });
   };
 
-  // Toggle Layer Visibility
-  const toggleLayer = (layerName: keyof typeof activeLayers) => {
-    if (!map.current || !mapLoaded) return;
-    const m = map.current;
-    const nextState = !activeLayers[layerName];
-    setActiveLayers(prev => ({ ...prev, [layerName]: nextState }));
-
-    const visibility = nextState ? "visible" : "none";
-    if (layerName === "flood" && m.getLayer("flood-fill")) {
-      m.setLayoutProperty("flood-fill", "visibility", visibility);
-      m.setLayoutProperty("flood-outline", "visibility", visibility);
-    } else if (layerName === "roads" && m.getLayer("roads-lines")) {
-      m.setLayoutProperty("roads-lines", "visibility", visibility);
-      if (m.getLayer("roads-casing")) m.setLayoutProperty("roads-casing", "visibility", visibility);
-    } else if (layerName === "settlements" && m.getLayer("settlements-circles")) {
-      m.setLayoutProperty("settlements-circles", "visibility", visibility);
-      m.setLayoutProperty("settlements-glow", "visibility", visibility);
-    } else if (layerName === "infrastructure" && m.getLayer("infra-circles")) {
-      m.setLayoutProperty("infra-circles", "visibility", visibility);
-    } else if (layerName === "bases" && m.getLayer("bases-circles")) {
-      m.setLayoutProperty("bases-circles", "visibility", visibility);
-    } else if (layerName === "routes" && m.getLayer("candidate-route-line")) {
-      m.setLayoutProperty("candidate-route-line", "visibility", visibility);
-      if (m.getLayer("candidate-route-glow")) m.setLayoutProperty("candidate-route-glow", "visibility", visibility);
-    }
-  };
-
-  const handleFlyTo = (coords: [number, number], zoom: number) => {
-    if (!map.current) return;
-    map.current.flyTo({
+  const handleFlyTo = (coords: [number, number], zoom: number = 12) => {
+    map.current?.flyTo({
       center: coords,
-      zoom,
-      speed: 1.4
+      zoom: zoom,
+      essential: true,
+      duration: 1200
     });
     setSearchOpen(false);
   };
 
   const resetExtent = () => {
-    if (!map.current) return;
-    map.current.flyTo({
+    map.current?.flyTo({
       center: initialCenter,
       zoom: initialZoom,
       pitch: 0,
-      bearing: 0
+      bearing: 0,
+      duration: 1000
     });
   };
 
   const toggleFullscreen = () => {
-    if (!mapContainer.current) return;
-    if (!isFullscreen) {
-      if (mapContainer.current.requestFullscreen) {
-        mapContainer.current.requestFullscreen();
-      }
-      setIsFullscreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-      setIsFullscreen(false);
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Map Snapshot Download (PNG)
+  const exportMapPng = () => {
+    if (!map.current) return;
+    try {
+      const canvas = map.current.getCanvas();
+      const imgData = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = imgData;
+      a.download = `floodguard_situation_map_${new Date().toISOString().slice(0, 10)}.png`;
+      a.click();
+    } catch (err) {
+      console.error("Map canvas export failed:", err);
+    }
+  };
+
+  // Road status verification submission
+  const handleRoadVerificationSubmit = async () => {
+    if (!activeFeature || activeFeature.type !== "road") return;
+    setRoadSubmitting(true);
+    setVerifyMessage(null);
+    try {
+      const updated = await updateRoadStatus(activeFeature.data.id, {
+        verification_status: roadVerifyStatus,
+        reporter: roadReporter,
+        evidence_notes: roadVerifyNotes
+      });
+      setActiveFeature({ type: "road", data: { ...activeFeature.data, ...updated } });
+      setVerifyMessage("Road verification recorded. Network connectivity recalculated.");
+      if (onRoadStatusUpdated) onRoadStatusUpdated();
+    } catch (err: any) {
+      setVerifyMessage("Failed to update road status: " + err.message);
+    } finally {
+      setRoadSubmitting(false);
     }
   };
 
@@ -506,7 +684,10 @@ export default function FloodGuardMap({
       } ${className}`}
     >
       {/* Map Canvas Container */}
-      <div ref={mapContainer} className="w-full h-full" />
+      <div
+        ref={mapContainer}
+        className={`w-full h-full ${measureMode ? "cursor-crosshair" : ""}`}
+      />
 
       {/* Map Diagnostics Fallback if WebGL/Tile Fails */}
       {mapError && (
@@ -525,7 +706,7 @@ export default function FloodGuardMap({
         </div>
       )}
 
-      {/* Top-Left: Navigation HUD & Location Search */}
+      {/* Top-Left: Navigation HUD & Controls */}
       <div className="absolute top-3 left-3 z-20 flex flex-col gap-2 pointer-events-auto">
         <div className="flex items-center gap-1.5 p-1 bg-[#172033]/90 backdrop-blur-md rounded-lg border border-[#334155] shadow-lg text-slate-200">
           <button
@@ -558,6 +739,30 @@ export default function FloodGuardMap({
             <Search className="w-4 h-4" />
           </button>
           <button
+            onClick={() => {
+              setMeasureMode(!measureMode);
+              if (measureMode) {
+                setMeasurePoints([]);
+                setMeasureDistanceKm(0);
+              }
+            }}
+            className={`p-1.5 rounded transition ${
+              measureMode
+                ? "bg-[#F59E0B] text-slate-900 font-bold"
+                : "text-slate-300 hover:bg-[#1E293B] hover:text-white"
+            }`}
+            title="Distance Measurement Tool"
+          >
+            <Ruler className="w-4 h-4" />
+          </button>
+          <button
+            onClick={exportMapPng}
+            className="p-1.5 hover:bg-[#1E293B] rounded text-slate-300 hover:text-white transition"
+            title="Export Map PNG Snapshot"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
             onClick={toggleFullscreen}
             className="p-1.5 hover:bg-[#1E293B] rounded text-slate-300 hover:text-white transition"
             title="Toggle Fullscreen View"
@@ -568,7 +773,7 @@ export default function FloodGuardMap({
 
         {/* Quick Location Dropdown */}
         {searchOpen && (
-          <div className="p-2 bg-[#172033]/95 backdrop-blur-md rounded-lg border border-[#334155] shadow-xl w-48 flex flex-col gap-1 text-xs text-slate-200 animate-in fade-in duration-150">
+          <div className="p-2 bg-[#172033]/95 backdrop-blur-md rounded-lg border border-[#334155] shadow-xl w-52 flex flex-col gap-1 text-xs text-slate-200 animate-in fade-in duration-150">
             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">
               Jump to Location
             </div>
@@ -592,6 +797,39 @@ export default function FloodGuardMap({
           <span className="text-slate-500">|</span>
           <span className="text-slate-300">z{zoomLevel}</span>
         </div>
+
+        {/* Measurement HUD when active */}
+        {measureMode && (
+          <div className="p-2.5 bg-[#172033]/95 backdrop-blur-md rounded-lg border border-[#F59E0B]/50 shadow-xl text-xs text-slate-200 space-y-1.5 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between font-semibold text-[#F59E0B]">
+              <span className="flex items-center gap-1.5">
+                <Ruler className="w-3.5 h-3.5" />
+                Distance Ruler
+              </span>
+              <span>{measureDistanceKm} km</span>
+            </div>
+            <div className="text-[10px] text-slate-400">
+              Click points on the map to measure distance. ({measurePoints.length} vertices)
+            </div>
+            <div className="flex items-center gap-2 pt-1 border-t border-[#334155]">
+              <button
+                onClick={() => {
+                  setMeasurePoints([]);
+                  setMeasureDistanceKm(0);
+                }}
+                className="px-2 py-0.5 rounded bg-[#1E293B] text-[10px] text-slate-300 hover:text-white"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => setMeasureMode(false)}
+                className="px-2 py-0.5 rounded bg-[#2563EB] text-[10px] text-white font-medium"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top-Center: Basemap Switcher */}
@@ -650,7 +888,7 @@ export default function FloodGuardMap({
               >
                 <span className="flex items-center gap-2">
                   <span className="w-3 h-1 rounded bg-[#10B981]" />
-                  <span>Road Network (OSM)</span>
+                  <span>Road Network</span>
                 </span>
                 {activeLayers.roads ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               </button>
@@ -676,7 +914,7 @@ export default function FloodGuardMap({
               >
                 <span className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                  <span>Critical Facilities</span>
+                  <span>Critical Infrastructure</span>
                 </span>
                 {activeLayers.infrastructure ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               </button>
@@ -689,9 +927,22 @@ export default function FloodGuardMap({
               >
                 <span className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
-                  <span>NDRF Staging Bases</span>
+                  <span>Rescue Staging Bases</span>
                 </span>
                 {activeLayers.bases ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={() => toggleLayer("observations")}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded transition ${
+                  activeLayers.observations ? "bg-amber-500/15 text-amber-300 font-medium" : "text-slate-400 hover:bg-[#1E293B]"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
+                  <span>Field Observations</span>
+                </span>
+                {activeLayers.observations ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               </button>
 
               {candidateRoute && (
@@ -713,16 +964,19 @@ export default function FloodGuardMap({
         </div>
       </div>
 
-      {/* Feature Inspection Modal / Overlay */}
+      {/* Feature Inspection Drawer (Right Context Panel) */}
       {activeFeature && (
-        <div className="absolute bottom-12 left-3 z-30 bg-[#172033]/95 backdrop-blur-md p-4 rounded-xl border border-[#334155] shadow-2xl max-w-sm text-xs text-slate-200 animate-in fade-in duration-150">
+        <div className="absolute bottom-12 right-3 z-30 bg-[#172033]/95 backdrop-blur-md p-4 rounded-xl border border-[#334155] shadow-2xl max-w-sm w-full text-xs text-slate-200 animate-in fade-in duration-150">
           <div className="flex items-start justify-between gap-3 border-b border-[#334155] pb-2 mb-2.5">
             <div>
               <div className="text-[10px] uppercase font-mono font-bold text-slate-400">
-                {activeFeature.type === "settlement" ? "Settlement Target" : activeFeature.type === "road" ? "Road Corridor Segment" : "Critical Infrastructure"}
+                {activeFeature.type === "settlement" ? "Settlement Target" :
+                 activeFeature.type === "road" ? "Road Network Segment" :
+                 activeFeature.type === "asset" ? "Infrastructure Asset" :
+                 "Multimodal Observation"}
               </div>
               <h5 className="text-sm font-bold text-white mt-0.5">
-                {activeFeature.data.name || activeFeature.data.id || "Monitored Asset"}
+                {activeFeature.data.name || activeFeature.data.description || activeFeature.data.id}
               </h5>
             </div>
             <button
@@ -733,6 +987,7 @@ export default function FloodGuardMap({
             </button>
           </div>
 
+          {/* Settlement Details */}
           {activeFeature.type === "settlement" && (
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -768,6 +1023,7 @@ export default function FloodGuardMap({
             </div>
           )}
 
+          {/* Road Segment Details & Interactive Verification */}
           {activeFeature.type === "road" && (
             <div className="space-y-2 text-[11px]">
               <div className="grid grid-cols-2 gap-2">
@@ -778,44 +1034,176 @@ export default function FloodGuardMap({
                   </span>
                 </div>
                 <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
-                  <span className="text-slate-400 block text-[10px]">Exposure Condition</span>
-                  <span className={`font-bold mt-0.5 block ${
-                    activeFeature.data.flood_intersection ? "text-red-400" : "text-emerald-400"
-                  }`}>
-                    {activeFeature.data.flood_intersection ? "Submerged / Severed" : "Dry / Passable"}
+                  <span className="text-slate-400 block text-[10px]">Length / Exposed</span>
+                  <span className="font-bold text-white mt-0.5 block">
+                    {activeFeature.data.length_km || 0} km / {activeFeature.data.exposed_km || 0} km
                   </span>
                 </div>
               </div>
-              <div className="text-[10px] text-slate-400 pt-1 border-t border-[#334155]/60">
-                Status: Preliminary geometric intersection. Verification requires ground reconnaissance.
+
+              {/* Verified status badge if verified */}
+              {activeFeature.data.verified_by && (
+                <div className="p-2 bg-[#10B981]/10 rounded border border-[#10B981]/30 text-[11px] text-[#10B981]">
+                  <div className="font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Status: {activeFeature.data.verification_status?.toUpperCase()}
+                  </div>
+                  <div className="text-[10px] text-slate-300 mt-0.5">
+                    Verified by: {activeFeature.data.verified_by} · {activeFeature.data.verified_at}
+                  </div>
+                  {activeFeature.data.verification_notes && (
+                    <div className="text-[10px] text-slate-400 mt-0.5 italic">
+                      &ldquo;{activeFeature.data.verification_notes}&rdquo;
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Analyst Road Status Update Form */}
+              <div className="pt-2 border-t border-[#334155] space-y-2">
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Update Field Status
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => setRoadVerifyStatus("reported_open")}
+                    className={`py-1 px-2 rounded border text-[11px] font-medium transition cursor-pointer ${
+                      roadVerifyStatus === "reported_open"
+                        ? "bg-[#10B981]/20 border-[#10B981] text-[#10B981]"
+                        : "bg-[#0B1220] border-[#334155] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Reported Open
+                  </button>
+                  <button
+                    onClick={() => setRoadVerifyStatus("reported_blocked")}
+                    className={`py-1 px-2 rounded border text-[11px] font-medium transition cursor-pointer ${
+                      roadVerifyStatus === "reported_blocked"
+                        ? "bg-red-500/20 border-red-500 text-red-400"
+                        : "bg-[#0B1220] border-[#334155] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Reported Blocked
+                  </button>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Reporter name (e.g. Maj. Sharma NDRF)"
+                  value={roadReporter}
+                  onChange={(e) => setRoadReporter(e.target.value)}
+                  className="w-full bg-[#0B1220] border border-[#334155] rounded px-2 py-1 text-[11px] text-white placeholder-slate-500 outline-none"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Verification notes or drone observation..."
+                  value={roadVerifyNotes}
+                  onChange={(e) => setRoadVerifyNotes(e.target.value)}
+                  className="w-full bg-[#0B1220] border border-[#334155] rounded px-2 py-1 text-[11px] text-white placeholder-slate-500 outline-none"
+                />
+
+                <button
+                  onClick={handleRoadVerificationSubmit}
+                  disabled={roadSubmitting}
+                  className="w-full py-1.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
+                >
+                  {roadSubmitting ? "Recalculating Graph..." : "Submit Road Status & Recalculate"}
+                </button>
+
+                {verifyMessage && (
+                  <div className="text-[10px] text-emerald-400 font-medium">
+                    {verifyMessage}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
+          {/* Infrastructure Asset Details */}
           {activeFeature.type === "asset" && (
             <div className="space-y-2 text-[11px]">
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
-                  <span className="text-slate-400 block text-[10px]">Type</span>
+                  <span className="text-slate-400 block text-[10px]">Asset Category</span>
                   <span className="font-bold capitalize text-white mt-0.5 block">
                     {activeFeature.data.asset_type || "Facility"}
                   </span>
                 </div>
                 <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
-                  <span className="text-slate-400 block text-[10px]">Flood Condition</span>
+                  <span className="text-slate-400 block text-[10px]">Exposure Status</span>
                   <span className={`font-bold mt-0.5 block ${
                     activeFeature.data.flood_intersection ? "text-red-400" : "text-emerald-400"
                   }`}>
-                    {activeFeature.data.flood_intersection ? "Exposed / Inundated" : "Operational / Safe"}
+                    {activeFeature.data.flood_intersection ? "Flood Exposed" : "Operational / Dry"}
                   </span>
                 </div>
               </div>
-              {activeFeature.data.capacity && (
+
+              {/* Asset-specific capacity (NO hospital beds on bridges!) */}
+              {activeFeature.data.asset_type === "hospital" && (
                 <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
-                  <span className="text-slate-400 block text-[10px]">Capacity</span>
-                  <span className="font-bold text-white mt-0.5 block">{activeFeature.data.capacity}</span>
+                  <span className="text-slate-400 block text-[10px]">Civilian Bed Capacity</span>
+                  <span className="font-bold text-white mt-0.5 block">{activeFeature.data.capacity || 120} Beds</span>
                 </div>
               )}
+              {activeFeature.data.asset_type === "shelter" && (
+                <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
+                  <span className="text-slate-400 block text-[10px]">Evacuation Capacity</span>
+                  <span className="font-bold text-white mt-0.5 block">{activeFeature.data.capacity || 500} Persons</span>
+                </div>
+              )}
+              {activeFeature.data.asset_type === "bridge" && (
+                <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
+                  <span className="text-slate-400 block text-[10px]">Structure Engineering</span>
+                  <span className="font-bold text-white mt-0.5 block">Reinforced Concrete Deck / Approach Causeway</span>
+                </div>
+              )}
+
+              <div className="text-[10px] text-slate-400 pt-1 border-t border-[#334155]/60 flex justify-between">
+                <span>District Contingency GIS</span>
+                <span>Contact: {activeFeature.data.contact_info || "District Helpline"}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Multimodal Field Observation Details */}
+          {activeFeature.type === "observation" && (
+            <div className="space-y-2 text-[11px]">
+              <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
+                <span className="text-slate-400 block text-[10px]">Observation Type</span>
+                <span className="font-bold capitalize text-white mt-0.5 block">
+                  {activeFeature.data.observation_type?.replace(/_/g, " ") || "Field Report"}
+                </span>
+              </div>
+              <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
+                <span className="text-slate-400 block text-[10px]">Reported Water Depth</span>
+                <span className="font-bold text-amber-400 mt-0.5 block">
+                  {activeFeature.data.water_depth_meters} meters
+                </span>
+              </div>
+              <div className="p-2 bg-[#0B1220]/60 rounded border border-[#334155]">
+                <span className="text-slate-400 block text-[10px]">Field Description</span>
+                <p className="text-slate-200 mt-0.5 leading-relaxed">
+                  {activeFeature.data.description}
+                </p>
+              </div>
+              {activeFeature.data.ai_interpretation && (
+                <div className="p-2 bg-[#172033] rounded border border-blue-500/30 text-[10px] text-slate-300">
+                  <span className="font-semibold text-blue-400 block mb-0.5">Automated AI Assessment (Unverified):</span>
+                  {activeFeature.data.ai_interpretation}
+                </div>
+              )}
+              <div className="text-[10px] text-slate-400 pt-1 border-t border-[#334155]/60 flex justify-between">
+                <span>Observer: {activeFeature.data.observer_name}</span>
+                <span className={`font-semibold uppercase ${
+                  activeFeature.data.verification_status === "verified" ? "text-emerald-400" :
+                  activeFeature.data.verification_status === "rejected" ? "text-red-400" :
+                  "text-amber-400"
+                }`}>
+                  {activeFeature.data.verification_status || "Pending"}
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -836,15 +1224,23 @@ export default function FloodGuardMap({
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-1 rounded bg-[#10B981]" />
-              <span>Passable Road</span>
+              <span>Passable / Verified Open</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-1 rounded bg-red-400" />
-              <span>Severed Road</span>
+              <span className="w-3 h-1 rounded bg-red-500" />
+              <span>Reported Blocked</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-1 rounded bg-amber-400" />
+              <span>Intersects Flood</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
               <span>NDRF Staging Base</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              <span>Field Observation</span>
             </div>
           </div>
           <div className="hidden sm:block text-[10px] text-slate-400 font-mono">

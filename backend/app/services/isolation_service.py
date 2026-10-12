@@ -51,8 +51,17 @@ class CommunityIsolationEngine:
 
             G_full.add_edge(u_coord, v_coord, **edge_data)
 
-            # In scenario graph, if road is flooded or severely compromised, exclude or heavily penalize
-            if not is_flooded:
+            # In scenario graph, prioritize verified ground intelligence over satellite proxy
+            verification_status = road.get("verification_status", "unverified")
+            include_in_scenario = False
+            if verification_status == "reported_open":
+                include_in_scenario = True
+            elif verification_status == "reported_blocked":
+                include_in_scenario = False
+            else:
+                include_in_scenario = not is_flooded
+
+            if include_in_scenario:
                 G_scenario.add_edge(u_coord, v_coord, **edge_data)
 
         # Connect rescue bases to the nearest node on the graph

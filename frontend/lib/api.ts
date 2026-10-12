@@ -1,7 +1,7 @@
 import {
   DisasterEvent, Settlement, InfrastructureAsset, RoadSegment,
   RescueBase, FloodMask, MapLayersResponse, RouteAssessment,
-  PriorityScore, CopilotMessage
+  PriorityScore, CopilotMessage, FieldObservation, DataSourcesCatalog
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -152,5 +152,70 @@ export async function generateDisasterReport(payload: {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error("Failed to generate report");
+  return await res.json();
+}
+
+export async function fetchFieldObservations(eventId: string): Promise<FieldObservation[]> {
+  try {
+    const res = await fetch(`${API_BASE}/observations/${eventId}`);
+    if (!res.ok) throw new Error("Failed to fetch field observations");
+    return await res.json();
+  } catch (err) {
+    console.warn("Using fallback field observations:", err);
+    return [];
+  }
+}
+
+export async function createFieldObservation(payload: {
+  event_id: string;
+  observer_name: string;
+  observation_type: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+  water_depth_meters: number;
+  image_url?: string;
+  nearest_feature_name?: string;
+}): Promise<FieldObservation> {
+  const res = await fetch(`${API_BASE}/observations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error("Failed to submit field observation");
+  return await res.json();
+}
+
+export async function verifyFieldObservation(id: string, payload: {
+  status: "verified" | "rejected";
+  reviewer_name: string;
+  review_notes?: string;
+}): Promise<FieldObservation> {
+  const res = await fetch(`${API_BASE}/observations/${id}/verify`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error("Failed to verify field observation");
+  return await res.json();
+}
+
+export async function updateRoadStatus(id: string, payload: {
+  verification_status: string;
+  reporter: string;
+  evidence_notes?: string;
+}): Promise<RoadSegment> {
+  const res = await fetch(`${API_BASE}/roads/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error("Failed to update road status");
+  return await res.json();
+}
+
+export async function fetchDataSourcesCatalog(): Promise<DataSourcesCatalog> {
+  const res = await fetch(`${API_BASE}/data-sources`);
+  if (!res.ok) throw new Error("Failed to fetch data sources catalog");
   return await res.json();
 }

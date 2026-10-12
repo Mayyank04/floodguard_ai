@@ -146,6 +146,10 @@ class RoadSegment(Base):
     flood_intersection = Column(Boolean, default=False)
     potentially_exposed_length_km = Column(Float, default=0.0)
     accessibility_status = Column(String(50), default="unverified") # accessible, potentially_inundated, impassable_suspected, unverified
+    verification_status = Column(String(50), default="unverified") # unverified, reported_open, reported_blocked, unknown
+    verified_by = Column(String(100), nullable=True)
+    verified_at = Column(String(50), nullable=True)
+    verification_notes = Column(Text, nullable=True)
 
     event = relationship("DisasterEvent", back_populates="roads")
 
@@ -199,13 +203,18 @@ class FieldObservation(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     event_id = Column(String(36), ForeignKey("disaster_events.id"), nullable=False)
     observer_name = Column(String(100), default="Field Volunteer / NDRF Officer")
-    observation_type = Column(String(50)) # flood_depth, bridge_submerged, embankment_breach, shelter_status
+    observation_type = Column(String(50)) # flood_depth, bridge_submerged, embankment_breach, shelter_status, road_blocked
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     image_url = Column(String(500), nullable=True)
     description = Column(Text)
     water_depth_meters = Column(Float, default=0.0)
     verified = Column(Boolean, default=False)
+    verification_status = Column(String(50), default="pending") # pending, verified, rejected
+    reviewed_by = Column(String(100), nullable=True)
+    reviewed_at = Column(String(50), nullable=True)
+    ai_interpretation = Column(Text, nullable=True)
+    nearest_feature_name = Column(String(150), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     event = relationship("DisasterEvent", back_populates="field_observations")
