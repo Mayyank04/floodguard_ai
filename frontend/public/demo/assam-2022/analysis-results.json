@@ -1,0 +1,558 @@
+{
+  "event_id": "6d5354bb-015e-4fb3-b050-d78fb1302910",
+  "summary": {
+    "event_title": "Assam Brahmaputra Basin Severe Flood (June 2022)",
+    "inundation_area_sq_km": 412.8,
+    "monitored_settlements": 10,
+    "isolated_settlements_count": 4,
+    "potentially_isolated_population": 56700,
+    "total_population_monitored": 160450,
+    "total_roads_km": 182.4,
+    "exposed_roads_km": 45.5,
+    "exposed_infrastructure_count": 5,
+    "total_infrastructure_count": 9,
+    "active_rescue_bases": 3
+  },
+  "provenance_and_methodology": {
+    "real_satellite_observations": "Copernicus Sentinel-1 C-SAR IW GRDH change detection (2022-05-28 pre-flood vs 2022-06-20 peak flood). Polarizations: VV+VH. Threshold: -14.5 dB backscatter decline.",
+    "precomputed_graph_analysis": "Topological OpenStreetMap road network graph processed with NetworkX Dijkstra and A* pathfinding. Isolated settlements defined as having no passable dry-road graph connectivity from any of the 3 active rescue bases.",
+    "simulation_parameters": "Road segments intersecting flood polygon are marked potentially inundated unless field reconnaissance updates report open/closed status."
+  },
+  "settlements": [
+    {
+      "id": "s-1",
+      "name": "Barpeta Town",
+      "district": "Barpeta",
+      "latitude": 26.3211,
+      "longitude": 91.0065,
+      "estimated_population": 42650,
+      "connectivity_status": "connected",
+      "flood_exposure_level": "moderate",
+      "flood_distance_meters": 350.0,
+      "priority_score": 48.2,
+      "priority_rank": 7,
+      "notes": "District headquarters. Urban center partially protected by municipal ring bund; low-lying wards flooded."
+    },
+    {
+      "id": "s-2",
+      "name": "Mandia Char Settlement",
+      "district": "Barpeta",
+      "latitude": 26.175,
+      "longitude": 90.965,
+      "estimated_population": 16500,
+      "connectivity_status": "critical_isolated",
+      "flood_exposure_level": "severe",
+      "flood_distance_meters": 0.0,
+      "priority_score": 94.6,
+      "priority_rank": 1,
+      "notes": "CRITICAL: Riverine char completely surrounded by Brahmaputra floodwaters. All mapped approach roads submerged under 2.2m water."
+    },
+    {
+      "id": "s-3",
+      "name": "Chenga Village",
+      "district": "Barpeta",
+      "latitude": 26.248,
+      "longitude": 91.072,
+      "estimated_population": 11400,
+      "connectivity_status": "potentially_isolated",
+      "flood_exposure_level": "severe",
+      "flood_distance_meters": 20.0,
+      "priority_score": 88.4,
+      "priority_rank": 2,
+      "notes": "State Highway SH-4 access breached at 2 culverts. Accessible only by motorized disaster boats."
+    },
+    {
+      "id": "s-4",
+      "name": "Kalgachia",
+      "district": "Barpeta",
+      "latitude": 26.291,
+      "longitude": 90.875,
+      "estimated_population": 18200,
+      "connectivity_status": "potentially_isolated",
+      "flood_exposure_level": "severe",
+      "flood_distance_meters": 45.0,
+      "priority_score": 82.1,
+      "priority_rank": 3,
+      "notes": "Beki river overflow inundated connecting bypass. Local hospital serving surrounding char belt."
+    },
+    {
+      "id": "s-5",
+      "name": "Tarabari Ghat",
+      "district": "Barpeta",
+      "latitude": 26.128,
+      "longitude": 91.035,
+      "estimated_population": 8900,
+      "connectivity_status": "critical_isolated",
+      "flood_exposure_level": "severe",
+      "flood_distance_meters": 0.0,
+      "priority_score": 86.8,
+      "priority_rank": 4,
+      "notes": "Southern Brahmaputra riverfront village. Major embankment breach; drinking water wells contaminated."
+    },
+    {
+      "id": "s-6",
+      "name": "Baghbar Hill Settlement",
+      "district": "Barpeta",
+      "latitude": 26.213,
+      "longitude": 90.902,
+      "estimated_population": 13100,
+      "connectivity_status": "potentially_isolated",
+      "flood_exposure_level": "moderate",
+      "flood_distance_meters": 120.0,
+      "priority_score": 75.3,
+      "priority_rank": 5,
+      "notes": "Elevated hillock serves as refuge for displaced char dwellers; surrounding feeder roads completely cut off."
+    },
+    {
+      "id": "s-7",
+      "name": "Sarthebari",
+      "district": "Barpeta",
+      "latitude": 26.345,
+      "longitude": 91.178,
+      "estimated_population": 14800,
+      "connectivity_status": "potentially_isolated",
+      "flood_exposure_level": "moderate",
+      "flood_distance_meters": 180.0,
+      "priority_score": 68.7,
+      "priority_rank": 6,
+      "notes": "Eastern sector craft town. Western arterial road inundated; eastern unpaved route precarious."
+    },
+    {
+      "id": "s-8",
+      "name": "Kayakuchi",
+      "district": "Barpeta",
+      "latitude": 26.382,
+      "longitude": 91.085,
+      "estimated_population": 9400,
+      "connectivity_status": "connected",
+      "flood_exposure_level": "low",
+      "flood_distance_meters": 620.0,
+      "priority_score": 41.5,
+      "priority_rank": 8,
+      "notes": "Northern agricultural sector. Road to Barpeta operational with speed restrictions."
+    },
+    {
+      "id": "s-9",
+      "name": "Bhawanipur",
+      "district": "Barpeta",
+      "latitude": 26.468,
+      "longitude": 91.042,
+      "estimated_population": 15300,
+      "connectivity_status": "connected",
+      "flood_exposure_level": "low",
+      "flood_distance_meters": 1100.0,
+      "priority_score": 32.0,
+      "priority_rank": 9,
+      "notes": "Situated on high ground near National Highway 27. Primary logistics waypoint."
+    },
+    {
+      "id": "s-10",
+      "name": "Sorbhog Rail Junction",
+      "district": "Barpeta",
+      "latitude": 26.502,
+      "longitude": 90.878,
+      "estimated_population": 10200,
+      "connectivity_status": "connected",
+      "flood_exposure_level": "unaffected",
+      "flood_distance_meters": 2400.0,
+      "priority_score": 22.4,
+      "priority_rank": 10,
+      "notes": "Northern railway transit hub and relief supply consolidation depot."
+    }
+  ],
+  "rescue_bases": [
+    {
+      "id": "b-1",
+      "name": "NDRF 1st Bn Barpeta Staging Unit",
+      "base_type": "NDRF_Battalion",
+      "latitude": 26.335,
+      "longitude": 91.015,
+      "operational_status": "operational",
+      "personnel_count": 65,
+      "boats_count": 14,
+      "vehicles_count": 8
+    },
+    {
+      "id": "b-2",
+      "name": "Barpeta District Emergency Operations Centre (DEOC)",
+      "base_type": "District_EOC",
+      "latitude": 26.319,
+      "longitude": 91.002,
+      "operational_status": "operational",
+      "personnel_count": 40,
+      "boats_count": 6,
+      "vehicles_count": 10
+    },
+    {
+      "id": "b-3",
+      "name": "Sorbhog High Ground Relief Depot",
+      "base_type": "Logistics_Hub",
+      "latitude": 26.501,
+      "longitude": 90.88,
+      "operational_status": "operational",
+      "personnel_count": 30,
+      "boats_count": 4,
+      "vehicles_count": 12
+    }
+  ],
+  "infrastructure": [
+    {
+      "id": "infra-1",
+      "name": "Barpeta Civil Hospital",
+      "asset_type": "hospital",
+      "latitude": 26.326,
+      "longitude": 91.011,
+      "flood_intersection": false,
+      "exposure_status": "potentially_affected",
+      "distance_to_flood_meters": 210.0,
+      "capacity": 300,
+      "contact_info": "+91 3665 252222"
+    },
+    {
+      "id": "infra-2",
+      "name": "Kalgachia Model Hospital",
+      "asset_type": "hospital",
+      "latitude": 26.289,
+      "longitude": 90.874,
+      "flood_intersection": true,
+      "exposure_status": "flood_exposed",
+      "distance_to_flood_meters": 0.0,
+      "capacity": 100,
+      "contact_info": "+91 3665 241105"
+    },
+    {
+      "id": "infra-3",
+      "name": "Chenga Primary Health Centre",
+      "asset_type": "hospital",
+      "latitude": 26.246,
+      "longitude": 91.074,
+      "flood_intersection": true,
+      "exposure_status": "flood_exposed",
+      "distance_to_flood_meters": 0.0,
+      "capacity": 30,
+      "contact_info": "+91 3665 264010"
+    },
+    {
+      "id": "infra-4",
+      "name": "Mandia Government Relief Camp",
+      "asset_type": "shelter",
+      "latitude": 26.178,
+      "longitude": 90.962,
+      "flood_intersection": true,
+      "exposure_status": "flood_exposed",
+      "distance_to_flood_meters": 0.0,
+      "capacity": 1200,
+      "contact_info": "Camp Officer Mandia"
+    },
+    {
+      "id": "infra-5",
+      "name": "Baghbar Hill Refuge Shelter",
+      "asset_type": "shelter",
+      "latitude": 26.215,
+      "longitude": 90.904,
+      "flood_intersection": false,
+      "exposure_status": "clear",
+      "distance_to_flood_meters": 110.0,
+      "capacity": 1500,
+      "contact_info": "SDRF Officer Baghbar"
+    },
+    {
+      "id": "infra-6",
+      "name": "Sarthebari Higher Secondary School Shelter",
+      "asset_type": "school",
+      "latitude": 26.347,
+      "longitude": 91.176,
+      "flood_intersection": false,
+      "exposure_status": "potentially_affected",
+      "distance_to_flood_meters": 160.0,
+      "capacity": 750,
+      "contact_info": "+91 3665 271032"
+    },
+    {
+      "id": "infra-7",
+      "name": "Beki River Major Bridge (NH-27)",
+      "asset_type": "bridge",
+      "latitude": 26.472,
+      "longitude": 90.915,
+      "flood_intersection": false,
+      "exposure_status": "clear",
+      "distance_to_flood_meters": 320.0,
+      "capacity": 10000,
+      "contact_info": "NHAI Control"
+    },
+    {
+      "id": "infra-8",
+      "name": "Chenga-Pahumara Culvert Bridge",
+      "asset_type": "bridge",
+      "latitude": 26.251,
+      "longitude": 91.068,
+      "flood_intersection": true,
+      "exposure_status": "flood_exposed",
+      "distance_to_flood_meters": 0.0,
+      "capacity": 500,
+      "contact_info": "PWD Assam"
+    },
+    {
+      "id": "infra-9",
+      "name": "Tarabari Riverine Embankment Regulator",
+      "asset_type": "water_plant",
+      "latitude": 26.131,
+      "longitude": 91.031,
+      "flood_intersection": true,
+      "exposure_status": "flood_exposed",
+      "distance_to_flood_meters": 0.0,
+      "capacity": 200,
+      "contact_info": "Water Resources Dept"
+    }
+  ],
+  "roads": [
+    {
+      "id": "r-1",
+      "name": "National Highway NH-27 (Northern Arterial Corridor)",
+      "road_type": "national_highway",
+      "length_km": 34.2,
+      "flood_intersection": false,
+      "potentially_exposed_length_km": 0.0,
+      "accessibility_status": "accessible",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          90.8,
+          26.485
+        ],
+        [
+          90.915,
+          26.472
+        ],
+        [
+          91.042,
+          26.468
+        ],
+        [
+          91.2,
+          26.459
+        ],
+        [
+          91.35,
+          26.452
+        ]
+      ]
+    },
+    {
+      "id": "r-2",
+      "name": "State Highway SH-4 (Barpeta - Chenga - Mukalmua)",
+      "road_type": "state_highway",
+      "length_km": 28.6,
+      "flood_intersection": true,
+      "potentially_exposed_length_km": 8.4,
+      "accessibility_status": "potentially_inundated",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          91.0065,
+          26.3211
+        ],
+        [
+          91.035,
+          26.289
+        ],
+        [
+          91.068,
+          26.251
+        ],
+        [
+          91.072,
+          26.248
+        ],
+        [
+          91.13,
+          26.22
+        ],
+        [
+          91.21,
+          26.195
+        ]
+      ]
+    },
+    {
+      "id": "r-3",
+      "name": "Barpeta - Mandia Feeder Road",
+      "road_type": "major_district_road",
+      "length_km": 19.8,
+      "flood_intersection": true,
+      "potentially_exposed_length_km": 11.2,
+      "accessibility_status": "impassable_suspected",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          91.0065,
+          26.3211
+        ],
+        [
+          90.995,
+          26.275
+        ],
+        [
+          90.982,
+          26.22
+        ],
+        [
+          90.965,
+          26.175
+        ]
+      ]
+    },
+    {
+      "id": "r-4",
+      "name": "Mandia - Tarabari Embankment Road",
+      "road_type": "rural_road",
+      "length_km": 12.4,
+      "flood_intersection": true,
+      "potentially_exposed_length_km": 12.4,
+      "accessibility_status": "impassable_suspected",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          90.965,
+          26.175
+        ],
+        [
+          90.995,
+          26.151
+        ],
+        [
+          91.035,
+          26.128
+        ]
+      ]
+    },
+    {
+      "id": "r-5",
+      "name": "Barpeta - Kalgachia Link Road",
+      "road_type": "major_district_road",
+      "length_km": 18.5,
+      "flood_intersection": true,
+      "potentially_exposed_length_km": 4.1,
+      "accessibility_status": "potentially_inundated",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          91.0065,
+          26.3211
+        ],
+        [
+          90.952,
+          26.305
+        ],
+        [
+          90.91,
+          26.298
+        ],
+        [
+          90.875,
+          26.291
+        ]
+      ]
+    },
+    {
+      "id": "r-6",
+      "name": "Kalgachia - Baghbar Hill Route",
+      "road_type": "rural_road",
+      "length_km": 11.2,
+      "flood_intersection": true,
+      "potentially_exposed_length_km": 5.6,
+      "accessibility_status": "potentially_inundated",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          90.875,
+          26.291
+        ],
+        [
+          90.886,
+          26.255
+        ],
+        [
+          90.902,
+          26.213
+        ]
+      ]
+    },
+    {
+      "id": "r-7",
+      "name": "Barpeta - Sarthebari MDR-12",
+      "road_type": "major_district_road",
+      "length_km": 21.0,
+      "flood_intersection": true,
+      "potentially_exposed_length_km": 3.8,
+      "accessibility_status": "potentially_inundated",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          91.0065,
+          26.3211
+        ],
+        [
+          91.085,
+          26.335
+        ],
+        [
+          91.135,
+          26.341
+        ],
+        [
+          91.178,
+          26.345
+        ]
+      ]
+    },
+    {
+      "id": "r-8",
+      "name": "Barpeta - Bhawanipur High Ground Connector",
+      "road_type": "major_district_road",
+      "length_km": 17.6,
+      "flood_intersection": false,
+      "potentially_exposed_length_km": 0.0,
+      "accessibility_status": "accessible",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          91.0065,
+          26.3211
+        ],
+        [
+          91.025,
+          26.385
+        ],
+        [
+          91.042,
+          26.468
+        ]
+      ]
+    },
+    {
+      "id": "r-9",
+      "name": "Bhawanipur - Sorbhog Junction Road",
+      "road_type": "major_district_road",
+      "length_km": 19.1,
+      "flood_intersection": false,
+      "potentially_exposed_length_km": 0.0,
+      "accessibility_status": "accessible",
+      "verification_status": "unverified",
+      "coordinates": [
+        [
+          91.042,
+          26.468
+        ],
+        [
+          90.965,
+          26.485
+        ],
+        [
+          90.878,
+          26.502
+        ]
+      ]
+    }
+  ]
+}

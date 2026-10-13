@@ -7,7 +7,7 @@ import {
   Filter, ChevronRight, Activity, Search, X
 } from "lucide-react";
 import { fetchIsolationAnalysis, fetchMapLayers, getPrimaryEventId } from "@/lib/api";
-import FloodGuardMap from "@/components/maps/FloodGuardMap";
+import FloodMap from "@/components/FloodMap";
 import Link from "next/link";
 
 type IsolationFilter = "ALL" | "ISOLATED" | "CONNECTED";
@@ -102,7 +102,7 @@ export default function IsolationAnalysisPage() {
       <div className="flex-1 flex gap-2.5 min-h-0 overflow-hidden">
         {/* Large Map Pane */}
         <div className="flex-1 panel relative overflow-hidden flex flex-col">
-          <FloodGuardMap
+          <FloodMap
             layersData={layersData}
             selectedSettlement={selectedCommunity}
             onSelectSettlement={(s) => setSelectedCommunity(s)}

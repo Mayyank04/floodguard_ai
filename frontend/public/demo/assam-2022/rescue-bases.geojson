@@ -1,0 +1,71 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "base-1",
+      "properties": {
+        "id": "b-1",
+        "name": "NDRF 1st Bn Barpeta Staging Unit",
+        "base_type": "NDRF_Battalion",
+        "latitude": 26.335,
+        "longitude": 91.015,
+        "operational_status": "operational",
+        "personnel_count": 65,
+        "boats_count": 14,
+        "vehicles_count": 8
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.015,
+          26.335
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "base-2",
+      "properties": {
+        "id": "b-2",
+        "name": "Barpeta District Emergency Operations Centre (DEOC)",
+        "base_type": "District_EOC",
+        "latitude": 26.319,
+        "longitude": 91.002,
+        "operational_status": "operational",
+        "personnel_count": 40,
+        "boats_count": 6,
+        "vehicles_count": 10
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.002,
+          26.319
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "base-3",
+      "properties": {
+        "id": "b-3",
+        "name": "Sorbhog High Ground Relief Depot",
+        "base_type": "Logistics_Hub",
+        "latitude": 26.501,
+        "longitude": 90.88,
+        "operational_status": "operational",
+        "personnel_count": 30,
+        "boats_count": 4,
+        "vehicles_count": 12
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.88,
+          26.501
+        ]
+      }
+    }
+  ]
+}

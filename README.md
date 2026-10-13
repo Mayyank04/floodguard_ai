@@ -100,6 +100,20 @@ Open `http://localhost:3000` in your browser.
 
 ---
 
+## Vercel Cloud Deployment
+
+The Next.js application is ready for 1-click deployment on Vercel:
+
+1. Import the repository in [Vercel](https://vercel.com/new).
+2. Set **Root Directory** to `frontend`.
+3. Add environment variable:
+   - `GEMINI_API_KEY`: Your Google AI Studio API key.
+4. Click **Deploy**.
+
+For detailed setup instructions, test checklists, and architectural notes, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+---
+
 ## Docker Deployment
 Run the full platform with a single command:
 ```bash

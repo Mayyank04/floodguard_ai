@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import FloodGuardMap from "@/components/maps/FloodGuardMap";
+import FloodMap from "@/components/FloodMap";
 import {
   fetchEvents, fetchMapLayers, fetchSettlements,
   fetchInfrastructure, fetchIsolationAnalysis,
@@ -77,8 +77,8 @@ export default function CommandCenterPage() {
     try {
       const res = await sendCopilotChat(q, event?.id);
       setCopilotAnswer(res.content);
-    } catch (err) {
-      setCopilotAnswer("Error querying FloodGuard Copilot. Ensure backend service is online.");
+    } catch (err: any) {
+      setCopilotAnswer("Error querying FloodGuard Copilot. Check network connection or GEMINI_API_KEY configuration in Vercel settings.");
     } finally {
       setIsCopilotLoading(false);
     }
@@ -161,7 +161,7 @@ export default function CommandCenterPage() {
               </div>
             </div>
           ) : (
-            <FloodGuardMap
+            <FloodMap
               layersData={layersData}
               selectedSettlement={selectedSettlement}
               onSelectSettlement={(s) => setSelectedSettlement(s)}

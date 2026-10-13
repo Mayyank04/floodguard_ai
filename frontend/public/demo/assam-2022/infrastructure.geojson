@@ -1,0 +1,212 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "infra-1",
+      "properties": {
+        "id": "infra-1",
+        "name": "Barpeta Civil Hospital",
+        "asset_type": "hospital",
+        "latitude": 26.326,
+        "longitude": 91.011,
+        "flood_intersection": false,
+        "exposure_status": "potentially_affected",
+        "distance_to_flood_meters": 210.0,
+        "capacity": 300,
+        "contact_info": "+91 3665 252222"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.011,
+          26.326
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-2",
+      "properties": {
+        "id": "infra-2",
+        "name": "Kalgachia Model Hospital",
+        "asset_type": "hospital",
+        "latitude": 26.289,
+        "longitude": 90.874,
+        "flood_intersection": true,
+        "exposure_status": "flood_exposed",
+        "distance_to_flood_meters": 0.0,
+        "capacity": 100,
+        "contact_info": "+91 3665 241105"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.874,
+          26.289
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-3",
+      "properties": {
+        "id": "infra-3",
+        "name": "Chenga Primary Health Centre",
+        "asset_type": "hospital",
+        "latitude": 26.246,
+        "longitude": 91.074,
+        "flood_intersection": true,
+        "exposure_status": "flood_exposed",
+        "distance_to_flood_meters": 0.0,
+        "capacity": 30,
+        "contact_info": "+91 3665 264010"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.074,
+          26.246
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-4",
+      "properties": {
+        "id": "infra-4",
+        "name": "Mandia Government Relief Camp",
+        "asset_type": "shelter",
+        "latitude": 26.178,
+        "longitude": 90.962,
+        "flood_intersection": true,
+        "exposure_status": "flood_exposed",
+        "distance_to_flood_meters": 0.0,
+        "capacity": 1200,
+        "contact_info": "Camp Officer Mandia"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.962,
+          26.178
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-5",
+      "properties": {
+        "id": "infra-5",
+        "name": "Baghbar Hill Refuge Shelter",
+        "asset_type": "shelter",
+        "latitude": 26.215,
+        "longitude": 90.904,
+        "flood_intersection": false,
+        "exposure_status": "clear",
+        "distance_to_flood_meters": 110.0,
+        "capacity": 1500,
+        "contact_info": "SDRF Officer Baghbar"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.904,
+          26.215
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-6",
+      "properties": {
+        "id": "infra-6",
+        "name": "Sarthebari Higher Secondary School Shelter",
+        "asset_type": "school",
+        "latitude": 26.347,
+        "longitude": 91.176,
+        "flood_intersection": false,
+        "exposure_status": "potentially_affected",
+        "distance_to_flood_meters": 160.0,
+        "capacity": 750,
+        "contact_info": "+91 3665 271032"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.176,
+          26.347
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-7",
+      "properties": {
+        "id": "infra-7",
+        "name": "Beki River Major Bridge (NH-27)",
+        "asset_type": "bridge",
+        "latitude": 26.472,
+        "longitude": 90.915,
+        "flood_intersection": false,
+        "exposure_status": "clear",
+        "distance_to_flood_meters": 320.0,
+        "capacity": 10000,
+        "contact_info": "NHAI Control"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.915,
+          26.472
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-8",
+      "properties": {
+        "id": "infra-8",
+        "name": "Chenga-Pahumara Culvert Bridge",
+        "asset_type": "bridge",
+        "latitude": 26.251,
+        "longitude": 91.068,
+        "flood_intersection": true,
+        "exposure_status": "flood_exposed",
+        "distance_to_flood_meters": 0.0,
+        "capacity": 500,
+        "contact_info": "PWD Assam"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.068,
+          26.251
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "infra-9",
+      "properties": {
+        "id": "infra-9",
+        "name": "Tarabari Riverine Embankment Regulator",
+        "asset_type": "water_plant",
+        "latitude": 26.131,
+        "longitude": 91.031,
+        "flood_intersection": true,
+        "exposure_status": "flood_exposed",
+        "distance_to_flood_meters": 0.0,
+        "capacity": 200,
+        "contact_info": "Water Resources Dept"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.031,
+          26.131
+        ]
+      }
+    }
+  ]
+}

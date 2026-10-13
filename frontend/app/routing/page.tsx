@@ -11,7 +11,7 @@ import {
   fetchSettlements, fetchIsolationAnalysis, analyzeRoute,
   fetchMapLayers, getPrimaryEventId
 } from "@/lib/api";
-import FloodGuardMap from "@/components/maps/FloodGuardMap";
+import FloodMap from "@/components/FloodMap";
 import Link from "next/link";
 
 export default function RescuePlanningPage() {
@@ -130,7 +130,7 @@ export default function RescuePlanningPage() {
       {/* 2. Map-First Workspace with Floating Route Configuration Card */}
       <div className="flex-1 rounded-xl border border-slate-800 relative overflow-hidden flex flex-col bg-[#0B1220]">
         {/* Full Viewport Map */}
-        <FloodGuardMap
+        <FloodMap
           layersData={layersData}
           candidateRoute={routeResult}
           selectedSettlement={selectedSettlement}

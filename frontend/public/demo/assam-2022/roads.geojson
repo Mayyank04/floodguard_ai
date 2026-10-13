@@ -1,0 +1,316 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "road-1",
+      "properties": {
+        "id": "r-1",
+        "name": "National Highway NH-27 (Northern Arterial Corridor)",
+        "road_type": "national_highway",
+        "length_km": 34.2,
+        "flood_intersection": false,
+        "potentially_exposed_length_km": 0.0,
+        "accessibility_status": "accessible",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            90.8,
+            26.485
+          ],
+          [
+            90.915,
+            26.472
+          ],
+          [
+            91.042,
+            26.468
+          ],
+          [
+            91.2,
+            26.459
+          ],
+          [
+            91.35,
+            26.452
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-2",
+      "properties": {
+        "id": "r-2",
+        "name": "State Highway SH-4 (Barpeta - Chenga - Mukalmua)",
+        "road_type": "state_highway",
+        "length_km": 28.6,
+        "flood_intersection": true,
+        "potentially_exposed_length_km": 8.4,
+        "accessibility_status": "potentially_inundated",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            91.0065,
+            26.3211
+          ],
+          [
+            91.035,
+            26.289
+          ],
+          [
+            91.068,
+            26.251
+          ],
+          [
+            91.072,
+            26.248
+          ],
+          [
+            91.13,
+            26.22
+          ],
+          [
+            91.21,
+            26.195
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-3",
+      "properties": {
+        "id": "r-3",
+        "name": "Barpeta - Mandia Feeder Road",
+        "road_type": "major_district_road",
+        "length_km": 19.8,
+        "flood_intersection": true,
+        "potentially_exposed_length_km": 11.2,
+        "accessibility_status": "impassable_suspected",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            91.0065,
+            26.3211
+          ],
+          [
+            90.995,
+            26.275
+          ],
+          [
+            90.982,
+            26.22
+          ],
+          [
+            90.965,
+            26.175
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-4",
+      "properties": {
+        "id": "r-4",
+        "name": "Mandia - Tarabari Embankment Road",
+        "road_type": "rural_road",
+        "length_km": 12.4,
+        "flood_intersection": true,
+        "potentially_exposed_length_km": 12.4,
+        "accessibility_status": "impassable_suspected",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            90.965,
+            26.175
+          ],
+          [
+            90.995,
+            26.151
+          ],
+          [
+            91.035,
+            26.128
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-5",
+      "properties": {
+        "id": "r-5",
+        "name": "Barpeta - Kalgachia Link Road",
+        "road_type": "major_district_road",
+        "length_km": 18.5,
+        "flood_intersection": true,
+        "potentially_exposed_length_km": 4.1,
+        "accessibility_status": "potentially_inundated",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            91.0065,
+            26.3211
+          ],
+          [
+            90.952,
+            26.305
+          ],
+          [
+            90.91,
+            26.298
+          ],
+          [
+            90.875,
+            26.291
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-6",
+      "properties": {
+        "id": "r-6",
+        "name": "Kalgachia - Baghbar Hill Route",
+        "road_type": "rural_road",
+        "length_km": 11.2,
+        "flood_intersection": true,
+        "potentially_exposed_length_km": 5.6,
+        "accessibility_status": "potentially_inundated",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            90.875,
+            26.291
+          ],
+          [
+            90.886,
+            26.255
+          ],
+          [
+            90.902,
+            26.213
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-7",
+      "properties": {
+        "id": "r-7",
+        "name": "Barpeta - Sarthebari MDR-12",
+        "road_type": "major_district_road",
+        "length_km": 21.0,
+        "flood_intersection": true,
+        "potentially_exposed_length_km": 3.8,
+        "accessibility_status": "potentially_inundated",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            91.0065,
+            26.3211
+          ],
+          [
+            91.085,
+            26.335
+          ],
+          [
+            91.135,
+            26.341
+          ],
+          [
+            91.178,
+            26.345
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-8",
+      "properties": {
+        "id": "r-8",
+        "name": "Barpeta - Bhawanipur High Ground Connector",
+        "road_type": "major_district_road",
+        "length_km": 17.6,
+        "flood_intersection": false,
+        "potentially_exposed_length_km": 0.0,
+        "accessibility_status": "accessible",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            91.0065,
+            26.3211
+          ],
+          [
+            91.025,
+            26.385
+          ],
+          [
+            91.042,
+            26.468
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road-9",
+      "properties": {
+        "id": "r-9",
+        "name": "Bhawanipur - Sorbhog Junction Road",
+        "road_type": "major_district_road",
+        "length_km": 19.1,
+        "flood_intersection": false,
+        "potentially_exposed_length_km": 0.0,
+        "accessibility_status": "accessible",
+        "verification_status": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            91.042,
+            26.468
+          ],
+          [
+            90.965,
+            26.485
+          ],
+          [
+            90.878,
+            26.502
+          ]
+        ]
+      }
+    }
+  ]
+}

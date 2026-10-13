@@ -1,0 +1,255 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "settlement-1",
+      "properties": {
+        "id": "s-1",
+        "name": "Barpeta Town",
+        "district": "Barpeta",
+        "latitude": 26.3211,
+        "longitude": 91.0065,
+        "estimated_population": 42650,
+        "connectivity_status": "connected",
+        "flood_exposure_level": "moderate",
+        "flood_distance_meters": 350.0,
+        "priority_score": 48.2,
+        "priority_rank": 7,
+        "notes": "District headquarters. Urban center partially protected by municipal ring bund; low-lying wards flooded."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.0065,
+          26.3211
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-2",
+      "properties": {
+        "id": "s-2",
+        "name": "Mandia Char Settlement",
+        "district": "Barpeta",
+        "latitude": 26.175,
+        "longitude": 90.965,
+        "estimated_population": 16500,
+        "connectivity_status": "critical_isolated",
+        "flood_exposure_level": "severe",
+        "flood_distance_meters": 0.0,
+        "priority_score": 94.6,
+        "priority_rank": 1,
+        "notes": "CRITICAL: Riverine char completely surrounded by Brahmaputra floodwaters. All mapped approach roads submerged under 2.2m water."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.965,
+          26.175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-3",
+      "properties": {
+        "id": "s-3",
+        "name": "Chenga Village",
+        "district": "Barpeta",
+        "latitude": 26.248,
+        "longitude": 91.072,
+        "estimated_population": 11400,
+        "connectivity_status": "potentially_isolated",
+        "flood_exposure_level": "severe",
+        "flood_distance_meters": 20.0,
+        "priority_score": 88.4,
+        "priority_rank": 2,
+        "notes": "State Highway SH-4 access breached at 2 culverts. Accessible only by motorized disaster boats."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.072,
+          26.248
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-4",
+      "properties": {
+        "id": "s-4",
+        "name": "Kalgachia",
+        "district": "Barpeta",
+        "latitude": 26.291,
+        "longitude": 90.875,
+        "estimated_population": 18200,
+        "connectivity_status": "potentially_isolated",
+        "flood_exposure_level": "severe",
+        "flood_distance_meters": 45.0,
+        "priority_score": 82.1,
+        "priority_rank": 3,
+        "notes": "Beki river overflow inundated connecting bypass. Local hospital serving surrounding char belt."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.875,
+          26.291
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-5",
+      "properties": {
+        "id": "s-5",
+        "name": "Tarabari Ghat",
+        "district": "Barpeta",
+        "latitude": 26.128,
+        "longitude": 91.035,
+        "estimated_population": 8900,
+        "connectivity_status": "critical_isolated",
+        "flood_exposure_level": "severe",
+        "flood_distance_meters": 0.0,
+        "priority_score": 86.8,
+        "priority_rank": 4,
+        "notes": "Southern Brahmaputra riverfront village. Major embankment breach; drinking water wells contaminated."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.035,
+          26.128
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-6",
+      "properties": {
+        "id": "s-6",
+        "name": "Baghbar Hill Settlement",
+        "district": "Barpeta",
+        "latitude": 26.213,
+        "longitude": 90.902,
+        "estimated_population": 13100,
+        "connectivity_status": "potentially_isolated",
+        "flood_exposure_level": "moderate",
+        "flood_distance_meters": 120.0,
+        "priority_score": 75.3,
+        "priority_rank": 5,
+        "notes": "Elevated hillock serves as refuge for displaced char dwellers; surrounding feeder roads completely cut off."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.902,
+          26.213
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-7",
+      "properties": {
+        "id": "s-7",
+        "name": "Sarthebari",
+        "district": "Barpeta",
+        "latitude": 26.345,
+        "longitude": 91.178,
+        "estimated_population": 14800,
+        "connectivity_status": "potentially_isolated",
+        "flood_exposure_level": "moderate",
+        "flood_distance_meters": 180.0,
+        "priority_score": 68.7,
+        "priority_rank": 6,
+        "notes": "Eastern sector craft town. Western arterial road inundated; eastern unpaved route precarious."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.178,
+          26.345
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-8",
+      "properties": {
+        "id": "s-8",
+        "name": "Kayakuchi",
+        "district": "Barpeta",
+        "latitude": 26.382,
+        "longitude": 91.085,
+        "estimated_population": 9400,
+        "connectivity_status": "connected",
+        "flood_exposure_level": "low",
+        "flood_distance_meters": 620.0,
+        "priority_score": 41.5,
+        "priority_rank": 8,
+        "notes": "Northern agricultural sector. Road to Barpeta operational with speed restrictions."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.085,
+          26.382
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-9",
+      "properties": {
+        "id": "s-9",
+        "name": "Bhawanipur",
+        "district": "Barpeta",
+        "latitude": 26.468,
+        "longitude": 91.042,
+        "estimated_population": 15300,
+        "connectivity_status": "connected",
+        "flood_exposure_level": "low",
+        "flood_distance_meters": 1100.0,
+        "priority_score": 32.0,
+        "priority_rank": 9,
+        "notes": "Situated on high ground near National Highway 27. Primary logistics waypoint."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.042,
+          26.468
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "settlement-10",
+      "properties": {
+        "id": "s-10",
+        "name": "Sorbhog Rail Junction",
+        "district": "Barpeta",
+        "latitude": 26.502,
+        "longitude": 90.878,
+        "estimated_population": 10200,
+        "connectivity_status": "connected",
+        "flood_exposure_level": "unaffected",
+        "flood_distance_meters": 2400.0,
+        "priority_score": 22.4,
+        "priority_rank": 10,
+        "notes": "Northern railway transit hub and relief supply consolidation depot."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          90.878,
+          26.502
+        ]
+      }
+    }
+  ]
+}

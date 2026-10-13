@@ -1,0 +1,56 @@
+{
+  "scenes": [
+    {
+      "platform": "Sentinel-1",
+      "sensor": "C-SAR (Interferometric Wide Swath)",
+      "acquisition_date": "2022-05-28",
+      "scene_type": "pre_flood",
+      "cloud_cover_percent": 0.0,
+      "resolution_meters": 10.0,
+      "polarization": "VV+VH",
+      "thumbnail_url": "/satellite/sentinel1_20220528_pre.jpg",
+      "metadata_json": {
+        "orbit_pass": "Descending",
+        "relative_orbit": 121,
+        "incidence_angle_deg": 39.2,
+        "baseline_type": "Pre-monsoon normal baseline"
+      }
+    },
+    {
+      "platform": "Sentinel-1",
+      "sensor": "C-SAR (Interferometric Wide Swath)",
+      "acquisition_date": "2022-06-20",
+      "scene_type": "peak_flood",
+      "cloud_cover_percent": 0.0,
+      "resolution_meters": 10.0,
+      "polarization": "VV+VH",
+      "thumbnail_url": "/satellite/sentinel1_20220620_peak.jpg",
+      "metadata_json": {
+        "orbit_pass": "Descending",
+        "relative_orbit": 121,
+        "incidence_angle_deg": 39.2,
+        "backscatter_shift_db": -6.8,
+        "sensor_mode": "IW GRDH",
+        "description": "Peak inundation observation through persistent cloud cover"
+      }
+    },
+    {
+      "platform": "Sentinel-2",
+      "sensor": "MSI (Multi-Spectral Instrument)",
+      "acquisition_date": "2022-06-24",
+      "scene_type": "optical_verification",
+      "cloud_cover_percent": 24.5,
+      "resolution_meters": 10.0,
+      "polarization": "Optical RGB+NIR+SWIR",
+      "thumbnail_url": "/satellite/sentinel2_20220624_optical.jpg",
+      "metadata_json": {
+        "mndwi_band_combination": "Band 3 (Green) & Band 11 (SWIR)",
+        "atmospherically_corrected": true
+      }
+    }
+  ],
+  "provenance": "European Space Agency (ESA) Copernicus Open Access Hub / STAC Sentinel-1 IW GRDH",
+  "processing_pipeline": "Thresholded dual-date microwave backscatter drop (<-14.5 dB) with Lee 5x5 speckle filter",
+  "spatial_resolution": "10m per pixel",
+  "coordinate_system": "EPSG:4326 (WGS84)"
+}
